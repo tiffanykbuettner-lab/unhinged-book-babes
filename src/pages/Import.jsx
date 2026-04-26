@@ -72,14 +72,18 @@ export default function Import({ onDone }) {
     setFileName(file.name)
     const reader = new FileReader()
     reader.onload = (ev) => {
-      const text = ev.target.result
+      let text = ev.target.result
+      // Remove BOM if present
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1)
+      // Try comma delimiter first
       const rows = parseCSV(text)
-      if (rows.length < 2) { alert('Could not parse CSV file.'); return }
+      if (rows.length < 2) { alert('Could not parse CSV file. Make sure you export as CSV from Book Buddy.'); return }
       const headers = rows[0]
+      console.log('Headers found:', headers.slice(0, 5))
       const books = rows.slice(1).map(row => {
         const get = (col) => {
-          const idx = headers.findIndex(h => h.toLowerCase() === col.toLowerCase())
-          return idx >= 0 ? (row[idx] || '') : ''
+          const idx = headers.findIndex(h => h.trim().toLowerCase() === col.toLowerCase())
+          return idx >= 0 ? (row[idx] || '').trim() : ''
         }
         return {
           title: get('Title'),
@@ -96,12 +100,13 @@ export default function Import({ onDone }) {
           cover_image_url: get('Uploaded Image URL') || '',
           special_features: '',
         }
-      }).filter(b => b.title)
+      }).filter(b => b.title && b.title.length > 0)
+      console.log('Books parsed:', books.length)
       setParsed(books)
       setPreview(books.slice(0, 5))
       setStep('preview')
     }
-    reader.readAsText(file)
+    reader.readAsText(file, 'UTF-8')
   }
 
   async function handleImport() {
