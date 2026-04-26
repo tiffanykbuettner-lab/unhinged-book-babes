@@ -218,7 +218,7 @@ function AddBookModal({ onClose, onSave, userId }) {
   function update(field, value) { setForm(f => ({ ...f, [field]: value })) }
 
   async function searchISBN(isbnOverride) {
-    const raw = isbnOverride || form.isbn
+    const raw = isbnOverride !== undefined ? isbnOverride : form.isbn
     const isbnToSearch = raw.trim().replace(/[^0-9X]/gi, '')
     if (!isbnToSearch) return
     setSearching(true)
@@ -258,9 +258,9 @@ function AddBookModal({ onClose, onSave, userId }) {
               <label style={labelStyle}>ISBN (optional — auto-fills details)</label>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                 <input value={form.isbn} onChange={e => update('isbn', e.target.value)} placeholder="e.g. 9780385737951" style={{ ...inputStyle, flex: 1 }} />
-                <button onClick={() => searchISBN()} disabled={searching} style={{ background: searching ? T.tealDim : T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' }}>
-                  {searching ? '🔍...' : 'Look up'}
-                </button>
+	      <button onClick={() => searchISBN(form.isbn)} disabled={searching} style={{ background: searching ? T.tealDim : T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer', 			fontSize: '13px', whiteSpace: 'nowrap' }}>
+ 	        {searching ? '🔍...' : 'Look up'}
+	       </button>
               </div>
               <button onClick={() => setShowScanner(true)} style={{ width: '100%', padding: '10px', borderRadius: '8px', background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '13px', fontWeight: 'bold' }}>
                 📷 Scan Barcode Instead
