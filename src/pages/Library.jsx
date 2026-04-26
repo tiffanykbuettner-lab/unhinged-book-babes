@@ -12,6 +12,8 @@ export default function Library() {
   const [selectedBook, setSelectedBook] = useState(null)
   const [user, setUser] = useState(null)
   const [search, setSearch] = useState('')
+  const [formatFilter, setFormatFilter] = useState('all')
+  const [editionFilter, setEditionFilter] = useState('all')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -21,15 +23,28 @@ export default function Library() {
   }, [])
 
   useEffect(() => {
-    if (!search.trim()) { setFiltered(books); return }
-    const q = search.toLowerCase()
-    setFiltered(books.filter(b =>
-      b.title?.toLowerCase().includes(q) ||
-      b.author?.toLowerCase().includes(q) ||
-      b.series?.toLowerCase().includes(q) ||
-      b.edition_name?.toLowerCase().includes(q)
-    ))
-  }, [search, books])
+    let result = books
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter(b =>
+        b.title?.toLowerCase().includes(q) ||
+        b.author?.toLowerCase().includes(q) ||
+        b.series?.toLowerCase().includes(q) ||
+        b.edition_name?.toLowerCase().includes(q)
+      )
+    }
+    if (formatFilter !== 'all') {
+      if (formatFilter === 'physical') {
+        result = result.filter(b => b.format === 'hardcover' || b.format === 'paperback')
+      } else {
+        result = result.filter(b => b.format === formatFilter)
+      }
+    }
+    if (editionFilter !== 'all') {
+      result = result.filter(b => b.edition_name?.toLowerCase().includes(editionFilter.toLowerCase()))
+    }
+    setFiltered(result)
+  }, [search, books, formatFilter, editionFilter])
 
   async function fetchBooks(userId) {
     const { data } = await supabase
@@ -42,22 +57,74 @@ export default function Library() {
 
   return (
     <div style={{ fontFamily: 'Georgia, serif', background: T.bg, minHeight: '100vh' }}>
-      <div style={{ background: T.header, padding: '24px 20px 20px' }}>
+      <div style={{ background: T.header, padding: '24px 20px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
           <div>
             <h1 style={{ color: T.white, margin: 0, fontSize: '24px', fontWeight: 'bold' }}>📖 My Library</h1>
             <p style={{ color: T.tealLight, margin: '4px 0 0', fontSize: '13px' }}>
-              {books.length} {books.length === 1 ? 'book' : 'books'} in your collection
+              {filtered.length} of {books.length} {books.length === 1 ? 'book' : 'books'}
             </p>
           </div>
           <button onClick={() => setShowAdd(true)} style={{ background: T.teal, color: T.white, border: 'none', borderRadius: '20px', padding: '10px 18px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 15px rgba(13,148,136,0.4)' }}>+ Add Book</button>
         </div>
-        <div style={{ position: 'relative' }}>
+
+        <div style={{ position: 'relative', marginBottom: '12px' }}>
           <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px' }}>🔍</span>
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search by title, author, series..."
             style={{ width: '100%', padding: '12px 16px 12px 40px', borderRadius: '12px', border: `1px solid ${T.tealBorder}`, background: 'rgba(255,255,255,0.05)', color: T.white, fontSize: '14px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Georgia, serif' }} />
         </div>
+
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+          {[
+            { value: 'all', label: '📚 All' },
+            { value: 'physical', label: '📖 Physical' },
+            { value: 'ebook', label: '📱 Ebook' },
+            { value: 'audiobook', label: '🎧 Audio' },
+          ].map(f => (
+            <button key={f.value} onClick={() => setFormatFilter(f.value)} style={{
+              padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+              fontFamily: 'Georgia, serif', fontSize: '12px', fontWeight: 'bold',
+              background: formatFilter === f.value ? T.teal : 'rgba(255,255,255,0.08)',
+              color: formatFilter === f.value ? T.white : T.muted,
+              boxShadow: formatFilter === f.value ? '0 2px 8px rgba(13,148,136,0.4)' : 'none',
+              transition: 'all 0.2s'
+            }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {books.some(b => b.edition_name) && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={() => setEditionFilter('all')} style={{
+              padding: '5px 12px', borderRadius: '20px', border: `1px solid ${T.goldBorder}`, cursor: 'pointer',
+              fontFamily: 'Georgia, serif', fontSize: '11px', fontWeight: 'bold',
+              background: editionFilter === 'all' ? T.goldDim : 'transparent',
+              color: editionFilter === 'all' ? T.goldLight : T.muted,
+              transition: 'all 0.2s'
+            }}>✨ All Editions</button>
+            {[...new Set(books.filter(b => b.edition_name).map(b => {
+              const name = b.edition_name.toLowerCase()
+              if (name.includes('fairyloot')) return 'Fairyloot'
+              if (name.includes('illumicrate')) return 'Illumicrate'
+              if (name.includes('b&n') || name.includes('barnes')) return 'B&N'
+              if (name.includes('signed')) return 'Signed'
+              if (name.includes('first')) return 'First Edition'
+              return b.edition_name.split(' ').slice(0, 2).join(' ')
+            }))].map(edition => (
+              <button key={edition} onClick={() => setEditionFilter(edition)} style={{
+                padding: '5px 12px', borderRadius: '20px', border: `1px solid ${T.goldBorder}`, cursor: 'pointer',
+                fontFamily: 'Georgia, serif', fontSize: '11px', fontWeight: 'bold',
+                background: editionFilter === edition ? T.goldDim : 'transparent',
+                color: editionFilter === edition ? T.goldLight : T.muted,
+                transition: 'all 0.2s'
+              }}>
+                {edition}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div style={{ padding: '16px' }}>
@@ -223,7 +290,6 @@ function AddBookModal({ onClose, onSave, userId }) {
     if (!isbnToSearch) return
     setSearching(true)
     try {
-      // Try Google Books first
       const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbnToSearch}`)
       const data = await res.json()
       if (data.items?.length > 0) {
@@ -232,7 +298,6 @@ function AddBookModal({ onClose, onSave, userId }) {
         setSearching(false)
         return
       }
-      // Fallback to Open Library
       const res2 = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbnToSearch}&format=json&jscmd=data`)
       const data2 = await res2.json()
       const book2 = data2[`ISBN:${isbnToSearch}`]
@@ -250,10 +315,8 @@ function AddBookModal({ onClose, onSave, userId }) {
     if (!form.title) return alert('Please enter a title.')
     setLoading(true)
     const { data: existing } = await supabase
-      .from('books')
-      .select('id, title, edition_name')
-      .eq('owner_id', userId)
-      .ilike('title', form.title.trim())
+      .from('books').select('id, title, edition_name')
+      .eq('owner_id', userId).ilike('title', form.title.trim())
     if (existing?.length > 0) {
       const editions = existing.map(b => b.edition_name ? `${b.title} (${b.edition_name})` : b.title).join(', ')
       const proceed = confirm(`You already have this title in your library:\n${editions}\n\nDo you want to add another version anyway?`)
@@ -281,9 +344,9 @@ function AddBookModal({ onClose, onSave, userId }) {
               <label style={labelStyle}>ISBN (optional — auto-fills details)</label>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                 <input value={form.isbn} onChange={e => update('isbn', e.target.value)} placeholder="e.g. 9780385737951" style={{ ...inputStyle, flex: 1 }} />
-	      <button onClick={() => searchISBN(form.isbn)} disabled={searching} style={{ background: searching ? T.tealDim : T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer', 			fontSize: '13px', whiteSpace: 'nowrap' }}>
- 	        {searching ? '🔍...' : 'Look up'}
-	       </button>
+                <button onClick={() => searchISBN(form.isbn)} disabled={searching} style={{ background: searching ? T.tealDim : T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                  {searching ? '🔍...' : 'Look up'}
+                </button>
               </div>
               <button onClick={() => setShowScanner(true)} style={{ width: '100%', padding: '10px', borderRadius: '8px', background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '13px', fontWeight: 'bold' }}>
                 📷 Scan Barcode Instead
