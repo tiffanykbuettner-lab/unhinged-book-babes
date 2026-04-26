@@ -4,24 +4,23 @@ import { T } from '../lib/theme'
 
 export default function Profile() {
   const [profile, setProfile] = useState(null)
-  const [bookCount, setBookCount] = useState(0)
-  const [wishCount, setWishCount] = useState(0)
-  const [pendingCount, setPendingCount] = useState(0)
+  const [stats, setStats] = useState({ total: 0, physical: 0, ebook: 0, audiobook: 0, wishlist: 0, pending: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchProfile() {
       const { data: { user } } = await supabase.auth.getUser()
-      const [{ data: profile }, { count: books }, { count: wish }, { count: pending }] = await Promise.all([
+      const [{ data: profile }, { data: books }, { count: wish }, { count: pending }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', user.id).single(),
-        supabase.from('books').select('*', { count: 'exact', head: true }).eq('owner_id', user.id),
+        supabase.from('books').select('format').eq('owner_id', user.id),
         supabase.from('wishlist').select('*', { count: 'exact', head: true }).eq('owner_id', user.id),
         supabase.from('pending_purchases').select('*', { count: 'exact', head: true }).eq('owner_id', user.id),
       ])
+      const physical = books?.filter(b => b.format === 'hardcover' || b.format === 'paperback').length || 0
+      const ebook = books?.filter(b => b.format === 'ebook').length || 0
+      const audiobook = books?.filter(b => b.format === 'audiobook').length || 0
       setProfile({ ...profile, email: user.email })
-      setBookCount(books || 0)
-      setWishCount(wish || 0)
-      setPendingCount(pending || 0)
+      setStats({ total: books?.length || 0, physical, ebook, audiobook, wishlist: wish || 0, pending: pending || 0 })
       setLoading(false)
     }
     fetchProfile()
@@ -39,7 +38,6 @@ export default function Profile() {
 
   return (
     <div style={{ fontFamily: 'Georgia, serif', background: T.bg, minHeight: '100vh' }}>
-      {/* Header */}
       <div style={{ background: T.header, padding: '32px 20px 48px', textAlign: 'center' }}>
         <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.tealBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px', margin: '0 auto 16px' }}>
           💀
@@ -54,23 +52,44 @@ export default function Profile() {
       </div>
 
       <div style={{ padding: '0 16px', marginTop: '-24px' }}>
-        {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+
+        {/* Total library card */}
+        <div style={{ background: T.card, borderRadius: '16px', padding: '20px', marginBottom: '12px', border: `1px solid ${T.tealBorder}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 4px', fontSize: '42px', fontWeight: 'bold', color: T.goldLight }}>{stats.total}</p>
+          <p style={{ margin: 0, fontSize: '14px', color: T.tealLight, fontWeight: 'bold' }}>Total Books in Library</p>
+        </div>
+
+        {/* Format breakdown */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
           {[
-            { count: bookCount, label: 'Books', emoji: '📖' },
-            { count: wishCount, label: 'Wishlist', emoji: '💫' },
-            { count: pendingCount, label: 'Pending', emoji: '📦' },
+            { count: stats.physical, label: 'Physical', emoji: '📖' },
+            { count: stats.ebook, label: 'Ebooks', emoji: '📱' },
+            { count: stats.audiobook, label: 'Audio', emoji: '🎧' },
           ].map(stat => (
             <div key={stat.label} style={{ background: T.card, borderRadius: '14px', padding: '16px 12px', textAlign: 'center', border: `1px solid ${T.tealBorder}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
-              <p style={{ margin: '0 0 4px', fontSize: '24px' }}>{stat.emoji}</p>
-              <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: T.goldLight }}>{stat.count}</p>
-              <p style={{ margin: '4px 0 0', fontSize: '12px', color: T.muted }}>{stat.label}</p>
+              <p style={{ margin: '0 0 4px', fontSize: '22px' }}>{stat.emoji}</p>
+              <p style={{ margin: 0, fontSize: '22px', fontWeight: 'bold', color: T.goldLight }}>{stat.count}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '11px', color: T.muted }}>{stat.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Wishlist & Pending */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+          {[
+            { count: stats.wishlist, label: 'Wishlist', emoji: '💫' },
+            { count: stats.pending, label: 'Pending', emoji: '📦' },
+          ].map(stat => (
+            <div key={stat.label} style={{ background: T.card, borderRadius: '14px', padding: '16px 12px', textAlign: 'center', border: `1px solid ${T.tealBorder}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+              <p style={{ margin: '0 0 4px', fontSize: '22px' }}>{stat.emoji}</p>
+              <p style={{ margin: 0, fontSize: '22px', fontWeight: 'bold', color: T.goldLight }}>{stat.count}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '11px', color: T.muted }}>{stat.label}</p>
             </div>
           ))}
         </div>
 
         {/* Info card */}
-        <div style={{ background: T.card, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${T.tealBorder}`, marginBottom: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+        <div style={{ background: T.card, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${T.tealBorder}`, marginBottom: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
           <div style={{ padding: '16px 20px', borderBottom: `1px solid ${T.tealBorder}`, display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: T.muted, fontSize: '13px' }}>Member since</span>
             <span style={{ color: T.white, fontSize: '13px', fontWeight: 'bold' }}>
@@ -87,7 +106,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Sign out */}
         <button onClick={handleSignOut} style={{
           width: '100%', padding: '14px', borderRadius: '12px',
           background: 'rgba(239,68,68,0.08)', color: '#f87171',
