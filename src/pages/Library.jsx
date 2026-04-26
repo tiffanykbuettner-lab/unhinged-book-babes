@@ -223,12 +223,25 @@ function AddBookModal({ onClose, onSave, userId }) {
     if (!isbnToSearch) return
     setSearching(true)
     try {
+      // Try Google Books first
       const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbnToSearch}`)
       const data = await res.json()
       if (data.items?.length > 0) {
         const book = data.items[0].volumeInfo
         setForm(f => ({ ...f, isbn: isbnToSearch, title: book.title || f.title, author: book.authors?.[0] || f.author, publisher: book.publisher || f.publisher, publication_year: book.publishedDate?.slice(0, 4) || f.publication_year, cover_image_url: book.imageLinks?.thumbnail?.replace('http:', 'https:') || f.cover_image_url }))
-      } else { alert(`No book found for ISBN: ${isbnToSearch}. Try entering details manually.`) }
+        setSearching(false)
+        return
+      }
+      // Fallback to Open Library
+      const res2 = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbnToSearch}&format=json&jscmd=data`)
+      const data2 = await res2.json()
+      const book2 = data2[`ISBN:${isbnToSearch}`]
+      if (book2) {
+        setForm(f => ({ ...f, isbn: isbnToSearch, title: book2.title || f.title, author: book2.authors?.[0]?.name || f.author, publisher: book2.publishers?.[0]?.name || f.publisher, publication_year: book2.publish_date?.slice(-4) || f.publication_year, cover_image_url: book2.cover?.large || book2.cover?.medium || f.cover_image_url }))
+        setSearching(false)
+        return
+      }
+      alert(`No book found for ISBN: ${isbnToSearch}. Try entering details manually.`)
     } catch { alert('Could not search. Please enter details manually.') }
     setSearching(false)
   }
