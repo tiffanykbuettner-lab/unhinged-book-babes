@@ -44,6 +44,7 @@ async function fixMissingCovers() {
     for (let i = 0; i < fixable.length; i++) {
       const book = fixable[i]
       try {
+        // Try Google Books first
         const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}`)
         const data = await res.json()
         if (data.items?.length > 0) {
@@ -51,11 +52,21 @@ async function fixMissingCovers() {
           if (url) {
             await supabase.from('books').update({ cover_image_url: url }).eq('id', book.id)
             fixed++
+            await new Promise(r => setTimeout(r, 500))
+            setFixProgress(Math.round(((i + 1) / fixable.length) * 100))
+            continue
           }
         }
+        // Fallback to Open Library
+        const res2 = await fetch(`https://covers.openlibrary.org/b/isbn/${book.isbn}-M.jpg?default=false`)
+        if (res2.ok) {
+          const url = `https://covers.openlibrary.org/b/isbn/${book.isbn}-M.jpg`
+          await supabase.from('books').update({ cover_image_url: url }).eq('id', book.id)
+          fixed++
+        }
       } catch {}
+      await new Promise(r => setTimeout(r, 500))
       setFixProgress(Math.round(((i + 1) / fixable.length) * 100))
-      await new Promise(r => setTimeout(r, 100))
     }
 
     alert(`Done! Fixed covers for ${fixed} of ${fixable.length} books.`)
