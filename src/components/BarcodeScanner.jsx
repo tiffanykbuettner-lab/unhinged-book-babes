@@ -38,9 +38,13 @@ export default function BarcodeScanner({ onDetected, onClose }) {
     Quagga.onDetected((result) => {
       const code = result?.codeResult?.code
       if (code && running) {
-        running = false
-        Quagga.stop()
-        onDetected(code)
+        const clean = code.trim().replace(/[^0-9X]/gi, '')
+        const isValidISBN = (clean.length === 13 && (clean.startsWith('978') || clean.startsWith('979'))) || clean.length === 10
+        if (isValidISBN) {
+          running = false
+          Quagga.stop()
+          onDetected(clean)
+        }
       }
     })
 
