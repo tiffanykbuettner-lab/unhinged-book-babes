@@ -289,8 +289,8 @@ function AddBookModal({ onClose, onSave, userId }) {
     async function fetchSuggestions() {
       const { data } = await supabase.from('books').select('author, series').eq('owner_id', userId)
       if (data) {
-        setAuthorSuggestions([...new Set(data.map(b => b.author).filter(Boolean))])
-        setSeriesSuggestions([...new Set(data.map(b => b.series).filter(Boolean))])
+        setAuthorSuggestions([...new Set(data.map(b => b.author?.trim()).filter(Boolean))])
+        setSeriesSuggestions([...new Set(data.map(b => b.series?.trim()).filter(Boolean))])
       }
     }
     fetchSuggestions()

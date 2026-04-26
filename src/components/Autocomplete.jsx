@@ -8,8 +8,16 @@ export default function Autocomplete({ value, onChange, suggestions, placeholder
 
   useEffect(() => {
     if (!value.trim()) { setFiltered([]); return }
-    const q = value.toLowerCase()
-    const matches = suggestions.filter(s => s.toLowerCase().includes(q) && s.toLowerCase() !== q)
+    const q = value.toLowerCase().trim()
+    const seen = new Set()
+    const matches = suggestions.filter(s => {
+      const normalized = s.toLowerCase().trim()
+      if (normalized === q) return false
+      if (!normalized.includes(q)) return false
+      if (seen.has(normalized)) return false
+      seen.add(normalized)
+      return true
+    })
     setFiltered(matches.slice(0, 6))
     setShow(matches.length > 0)
   }, [value, suggestions])
