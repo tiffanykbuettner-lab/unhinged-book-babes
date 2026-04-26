@@ -10,6 +10,7 @@ export default function Library() {
   const [filtered, setFiltered] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+  const [showBulkScanner, setShowBulkScanner] = useState(false)
   const [selectedBook, setSelectedBook] = useState(null)
   const [user, setUser] = useState(null)
   const [search, setSearch] = useState('')
@@ -66,7 +67,14 @@ export default function Library() {
               {filtered.length} of {books.length} {books.length === 1 ? 'book' : 'books'}
             </p>
           </div>
-          <button onClick={() => setShowAdd(true)} style={{ background: T.teal, color: T.white, border: 'none', borderRadius: '20px', padding: '10px 18px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 15px rgba(13,148,136,0.4)' }}>+ Add Book</button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => setShowBulkScanner(true)} style={{ background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, borderRadius: '20px', padding: '10px 14px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+              📚 Bulk Scan
+            </button>
+            <button onClick={() => setShowAdd(true)} style={{ background: T.teal, color: T.white, border: 'none', borderRadius: '20px', padding: '10px 18px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 15px rgba(13,148,136,0.4)' }}>
+              + Add
+            </button>
+          </div>
         </div>
 
         <div style={{ position: 'relative', marginBottom: '12px' }}>
@@ -166,6 +174,27 @@ export default function Library() {
 
       {showAdd && <AddBookModal onClose={() => setShowAdd(false)} onSave={() => { setShowAdd(false); fetchBooks(user.id) }} userId={user.id} />}
       {selectedBook && <BookDetailModal book={selectedBook} onClose={() => setSelectedBook(null)} onSave={() => { setSelectedBook(null); fetchBooks(user.id) }} />}
+      {showBulkScanner && (
+        <BarcodeScanner
+          bulkMode={true}
+          onClose={() => setShowBulkScanner(false)}
+          onDetected={() => {}}
+          onBulkComplete={async (books) => {
+            setShowBulkScanner(false)
+            if (books.length === 0) return
+            const { data: existing } = await supabase.from('books').select('title').eq('owner_id', user.id)
+            const existingTitles = new Set((existing || []).map(b => b.title?.toLowerCase().trim()))
+            const newBooks = books
+              .filter(b => !existingTitles.has(b.title?.toLowerCase().trim()))
+              .map(b => ({ ...b, owner_id: user.id }))
+            if (newBooks.length > 0) {
+              await supabase.from('books').insert(newBooks)
+              fetchBooks(user.id)
+            }
+            alert(`✅ Added ${newBooks.length} books! ${books.length - newBooks.length} duplicates skipped.`)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -402,10 +431,7 @@ function AddBookModal({ onClose, onSave, userId }) {
       </div>
       {showScanner && (
         <BarcodeScanner
-          onDetected={(code) => {
-            setShowScanner(false)
-            searchISBN(code)
-          }}
+          onDetected={(code) => { setShowScanner(false); searchISBN(code) }}
           onClose={() => setShowScanner(false)}
         />
       )}
