@@ -3,30 +3,74 @@ import { supabase } from '../lib/supabase'
 import { T } from '../lib/theme'
 
 function parseCSV(text) {
-  const lines = []
-  let current = ''
+  const results = []
+  let row = []
+  let field = ''
   let inQuotes = false
-  for (let i = 0; i < text.length; i++) {
+  let i = 0
+
+  while (i < text.length) {
     const ch = text[i]
-    if (ch === '"') {
-      if (inQuotes && text[i + 1] === '"') { current += '"'; i++ }
-      else inQuotes = !inQuotes
-    } else if (ch === ',' && !inQuotes) {
-      lines[lines.length - 1]?.push(current.trim())
-      current = ''
-    } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
-      if (current || lines.length > 0) {
-        if (!lines.length) lines.push([])
-        lines[lines.length - 1].push(current.trim())
-        if (ch === '\r' && text[i + 1] === '\n') i++
-        lines.push([])
-        current = ''
+    const next = text[i + 1]
+
+    if (inQuotes) {
+      if (ch === '"' && next === '"') {
+        field += '"'
+        i += 2
+        continue
+      } else if (ch === '"') {
+        inQuotes = false
+        i++
+        continue
+      } else {
+        field += ch
+        i++
+        continue
       }
-    } else {
-      current += ch
     }
+
+    if (ch === '"') {
+      inQuotes = true
+      i++
+      continue
+    }
+
+    if (ch === ',') {
+      row.push(field)
+      field = ''
+      i++
+      continue
+    }
+
+    if (ch === '\r' && next === '\n') {
+      row.push(field)
+      field = ''
+      if (row.some(f => f.length > 0)) results.push(row)
+      row = []
+      i += 2
+      continue
+    }
+
+    if (ch === '\n' || ch === '\r') {
+      row.push(field)
+      field = ''
+      if (row.some(f => f.length > 0)) results.push(row)
+      row = []
+      i++
+      continue
+    }
+
+    field += ch
+    i++
   }
-  if (current) lines[lines.length - 1]?.push(current.trim())
+
+  if (field || row.length > 0) {
+    row.push(field)
+    if (row.some(f => f.length > 0)) results.push(row)
+  }
+
+  return results
+}  if (current) lines[lines.length - 1]?.push(current.trim())
   return lines.filter(l => l.length > 1)
 }
 
