@@ -6,6 +6,8 @@ export default function Profile() {
   const [profile, setProfile] = useState(null)
   const [stats, setStats] = useState({ total: 0, physical: 0, ebook: 0, audiobook: 0, wishlist: 0, pending: 0 })
   const [loading, setLoading] = useState(true)
+  const [fixingCovers, setFixingCovers] = useState(false)
+  const [fixProgress, setFixProgress] = useState(0)
 
   useEffect(() => {
     async function fetchProfile() {
@@ -25,7 +27,41 @@ export default function Profile() {
     }
     fetchProfile()
   }, [])
+async function fixMissingCovers() {
+    setFixingCovers(true)
+    setFixProgress(0)
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data: books } = await supabase
+      .from('books')
+      .select('id, isbn, cover_image_url')
+      .eq('owner_id', user.id)
+      .is('cover_image_url', null)
+      .neq('isbn', '')
+    
+    const fixable = (books || []).filter(b => b.isbn && b.isbn.length >= 10)
+    let fixed = 0
 
+    for (let i = 0; i < fixable.length; i++) {
+      const book = fixable[i]
+      try {
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}`)
+        const data = await res.json()
+        if (data.items?.length > 0) {
+          const url = data.items[0].volumeInfo?.imageLinks?.thumbnail?.replace('http:', 'https:')
+          if (url) {
+            await supabase.from('books').update({ cover_image_url: url }).eq('id', book.id)
+            fixed++
+          }
+        }
+      } catch {}
+      setFixProgress(Math.round(((i + 1) / fixable.length) * 100))
+      await new Promise(r => setTimeout(r, 100))
+    }
+
+    alert(`Done! Fixed covers for ${fixed} of ${fixable.length} books.`)
+    setFixingCovers(false)
+    setFixProgress(0)
+  }
   async function handleSignOut() {
     await supabase.auth.signOut()
   }
@@ -105,7 +141,15 @@ export default function Profile() {
             <span style={{ color: T.goldLight, fontSize: '13px', fontWeight: 'bold' }}>Unhinged Book Babes 💀</span>
           </div>
         </div>
-
+	<button onClick={fixMissingCovers} disabled={fixingCovers} style={{
+ 	  width: '100%', padding: '14px', borderRadius: '12px',
+ 	  background: fixingCovers ? 'rgba(13,148,136,0.1)' : T.tealDim,
+  	  color: T.tealLight, border: `1px solid ${T.tealBorder}`,
+  	  fontSize: '15px', fontWeight: 'bold', cursor: fixingCovers ? 'not-allowed' : 'pointer',
+  	  fontFamily: 'Georgia, serif', marginBottom: '12px'
+	}}>
+  	  {fixingCovers ? `🔍 Fetching covers... ${fixProgress}%` : '🖼️ Fix Missing Covers'}
+	</button>
         <button onClick={() => window.location.href = '/import'} style={{
           width: '100%', padding: '14px', borderRadius: '12px',
           background: T.tealDim, color: T.tealLight,
