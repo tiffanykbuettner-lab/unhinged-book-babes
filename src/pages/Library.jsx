@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { T } from '../lib/theme'
 import BarcodeScanner from '../components/BarcodeScanner'
 import CoverUpload from '../components/CoverUpload'
+import Autocomplete from '../components/Autocomplete'
 
 export default function Library() {
   const [books, setBooks] = useState([])
@@ -281,6 +282,19 @@ function AddBookModal({ onClose, onSave, userId }) {
   const [loading, setLoading] = useState(false)
   const [searching, setSearching] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
+  const [authorSuggestions, setAuthorSuggestions] = useState([])
+  const [seriesSuggestions, setSeriesSuggestions] = useState([])
+
+  useEffect(() => {
+    async function fetchSuggestions() {
+      const { data } = await supabase.from('books').select('author, series').eq('owner_id', userId)
+      if (data) {
+        setAuthorSuggestions([...new Set(data.map(b => b.author).filter(Boolean))])
+        setSeriesSuggestions([...new Set(data.map(b => b.series).filter(Boolean))])
+      }
+    }
+    fetchSuggestions()
+  }, [userId])
 
   function update(field, value) { setForm(f => ({ ...f, [field]: value })) }
 
@@ -353,9 +367,15 @@ function AddBookModal({ onClose, onSave, userId }) {
               </button>
             </div>
             <div><label style={labelStyle}>Title *</label><input value={form.title} onChange={e => update('title', e.target.value)} placeholder="Book title" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Author</label><input value={form.author} onChange={e => update('author', e.target.value)} placeholder="Author name" style={inputStyle} /></div>
+            <div>
+              <label style={labelStyle}>Author</label>
+              <Autocomplete value={form.author} onChange={v => update('author', v)} suggestions={authorSuggestions} placeholder="Author name" style={inputStyle} />
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div><label style={labelStyle}>Series</label><input value={form.series} onChange={e => update('series', e.target.value)} placeholder="Series name" style={inputStyle} /></div>
+              <div>
+                <label style={labelStyle}>Series</label>
+                <Autocomplete value={form.series} onChange={v => update('series', v)} suggestions={seriesSuggestions} placeholder="Series name" style={inputStyle} />
+              </div>
               <div><label style={labelStyle}>Volume #</label><input value={form.volume_number} onChange={e => update('volume_number', e.target.value)} placeholder="e.g. 1" style={inputStyle} /></div>
             </div>
             <div><label style={labelStyle}>Edition Name</label><input value={form.edition_name} onChange={e => update('edition_name', e.target.value)} placeholder="e.g. Fairyloot Exclusive" style={inputStyle} /></div>
