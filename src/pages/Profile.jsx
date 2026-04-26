@@ -1,25 +1,27 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { T } from '../lib/theme'
 
 export default function Profile() {
   const [profile, setProfile] = useState(null)
   const [bookCount, setBookCount] = useState(0)
+  const [wishCount, setWishCount] = useState(0)
+  const [pendingCount, setPendingCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchProfile() {
       const { data: { user } } = await supabase.auth.getUser()
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      const { count } = await supabase
-        .from('books')
-        .select('*', { count: 'exact', head: true })
-        .eq('owner_id', user.id)
+      const [{ data: profile }, { count: books }, { count: wish }, { count: pending }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase.from('books').select('*', { count: 'exact', head: true }).eq('owner_id', user.id),
+        supabase.from('wishlist').select('*', { count: 'exact', head: true }).eq('owner_id', user.id),
+        supabase.from('pending_purchases').select('*', { count: 'exact', head: true }).eq('owner_id', user.id),
+      ])
       setProfile({ ...profile, email: user.email })
-      setBookCount(count || 0)
+      setBookCount(books || 0)
+      setWishCount(wish || 0)
+      setPendingCount(pending || 0)
       setLoading(false)
     }
     fetchProfile()
@@ -30,60 +32,66 @@ export default function Profile() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#faf5fc' }}>
-      <p style={{ color: '#8b5e83', fontFamily: 'Georgia, serif' }}>Loading...</p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: T.bg }}>
+      <p style={{ color: T.tealLight, fontFamily: 'Georgia, serif' }}>Loading...</p>
     </div>
   )
 
   return (
-    <div style={{ fontFamily: 'Georgia, serif', background: '#faf5fc', minHeight: '100vh' }}>
-      <div style={{ background: '#4a2c6b', padding: '20px 20px 40px' }}>
-        <h1 style={{ color: '#fff', margin: 0, fontSize: '22px' }}>🌸 Profile</h1>
+    <div style={{ fontFamily: 'Georgia, serif', background: T.bg, minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ background: T.header, padding: '32px 20px 48px', textAlign: 'center' }}>
+        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.tealBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px', margin: '0 auto 16px' }}>
+          💀
+        </div>
+        <h1 style={{ color: T.white, margin: '0 0 4px', fontSize: '24px' }}>{profile?.display_name || 'Book Babe'}</h1>
+        <p style={{ color: T.tealLight, margin: '0 0 8px', fontSize: '14px' }}>{profile?.email}</p>
+        {profile?.role === 'admin' && (
+          <span style={{ background: T.goldDim, color: T.goldLight, fontSize: '12px', padding: '4px 12px', borderRadius: '12px', border: `1px solid ${T.goldBorder}` }}>
+            ✨ Admin
+          </span>
+        )}
       </div>
 
-      <div style={{ padding: '0 20px', marginTop: '-20px' }}>
-        <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(74,44,107,0.08)', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>
-              📚
+      <div style={{ padding: '0 16px', marginTop: '-24px' }}>
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+          {[
+            { count: bookCount, label: 'Books', emoji: '📖' },
+            { count: wishCount, label: 'Wishlist', emoji: '💫' },
+            { count: pendingCount, label: 'Pending', emoji: '📦' },
+          ].map(stat => (
+            <div key={stat.label} style={{ background: T.card, borderRadius: '14px', padding: '16px 12px', textAlign: 'center', border: `1px solid ${T.tealBorder}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+              <p style={{ margin: '0 0 4px', fontSize: '24px' }}>{stat.emoji}</p>
+              <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: T.goldLight }}>{stat.count}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: T.muted }}>{stat.label}</p>
             </div>
-            <div>
-              <h2 style={{ margin: 0, color: '#4a2c6b', fontSize: '20px' }}>{profile?.display_name || 'Book Babe'}</h2>
-              <p style={{ margin: '4px 0 0', color: '#8b5e83', fontSize: '14px' }}>{profile?.email}</p>
-              {profile?.role === 'admin' && (
-                <span style={{ background: '#4a2c6b', color: '#fff', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', marginTop: '6px', display: 'inline-block' }}>Admin</span>
-              )}
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div style={{ background: '#f3e8ff', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-              <p style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', color: '#4a2c6b' }}>{bookCount}</p>
-              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#8b5e83' }}>Books in Library</p>
-            </div>
-            <div style={{ background: '#f3e8ff', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-              <p style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', color: '#4a2c6b' }}>📖</p>
-              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#8b5e83' }}>Unhinged Book Babe</p>
-            </div>
-          </div>
+          ))}
         </div>
 
-        <div style={{ background: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(74,44,107,0.08)', marginBottom: '16px' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #f3e8ff' }}>
-            <p style={{ margin: 0, fontSize: '13px', color: '#6b7280' }}>Member since</p>
-            <p style={{ margin: '4px 0 0', color: '#4a2c6b', fontWeight: 'bold' }}>
+        {/* Info card */}
+        <div style={{ background: T.card, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${T.tealBorder}`, marginBottom: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+          <div style={{ padding: '16px 20px', borderBottom: `1px solid ${T.tealBorder}`, display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: T.muted, fontSize: '13px' }}>Member since</span>
+            <span style={{ color: T.white, fontSize: '13px', fontWeight: 'bold' }}>
               {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—'}
-            </p>
+            </span>
           </div>
-          <div style={{ padding: '16px 20px' }}>
-            <p style={{ margin: 0, fontSize: '13px', color: '#6b7280' }}>Role</p>
-            <p style={{ margin: '4px 0 0', color: '#4a2c6b', fontWeight: 'bold', textTransform: 'capitalize' }}>{profile?.role || 'Member'}</p>
+          <div style={{ padding: '16px 20px', borderBottom: `1px solid ${T.tealBorder}`, display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: T.muted, fontSize: '13px' }}>Role</span>
+            <span style={{ color: T.tealLight, fontSize: '13px', fontWeight: 'bold', textTransform: 'capitalize' }}>{profile?.role || 'Member'}</span>
+          </div>
+          <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: T.muted, fontSize: '13px' }}>Squad</span>
+            <span style={{ color: T.goldLight, fontSize: '13px', fontWeight: 'bold' }}>Unhinged Book Babes 💀</span>
           </div>
         </div>
 
+        {/* Sign out */}
         <button onClick={handleSignOut} style={{
           width: '100%', padding: '14px', borderRadius: '12px',
-          background: '#fff', color: '#dc2626', border: '1px solid #fecaca',
+          background: 'rgba(239,68,68,0.08)', color: '#f87171',
+          border: '1px solid rgba(239,68,68,0.25)',
           fontSize: '15px', fontWeight: 'bold', cursor: 'pointer',
           fontFamily: 'Georgia, serif', marginBottom: '32px'
         }}>
