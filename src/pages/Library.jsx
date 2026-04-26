@@ -218,7 +218,8 @@ function AddBookModal({ onClose, onSave, userId }) {
   function update(field, value) { setForm(f => ({ ...f, [field]: value })) }
 
   async function searchISBN(isbnOverride) {
-    const isbnToSearch = isbnOverride || form.isbn
+    const raw = isbnOverride || form.isbn
+    const isbnToSearch = raw.trim().replace(/[^0-9X]/gi, '')
     if (!isbnToSearch) return
     setSearching(true)
     try {
@@ -227,7 +228,7 @@ function AddBookModal({ onClose, onSave, userId }) {
       if (data.items?.length > 0) {
         const book = data.items[0].volumeInfo
         setForm(f => ({ ...f, isbn: isbnToSearch, title: book.title || f.title, author: book.authors?.[0] || f.author, publisher: book.publisher || f.publisher, publication_year: book.publishedDate?.slice(0, 4) || f.publication_year, cover_image_url: book.imageLinks?.thumbnail?.replace('http:', 'https:') || f.cover_image_url }))
-      } else { alert('No book found for that ISBN.') }
+      } else { alert(`No book found for ISBN: ${isbnToSearch}. Try entering details manually.`) }
     } catch { alert('Could not search. Please enter details manually.') }
     setSearching(false)
   }
