@@ -113,6 +113,15 @@ export default function Profile() {
           fontSize: '15px', fontWeight: 'bold', cursor: 'pointer',
           fontFamily: 'Georgia, serif', marginBottom: '32px'
         }}>
+	<button onClick={() => window.location.href = '/import'} style={{
+  	  width: '100%', padding: '14px', borderRadius: '12px',
+  	  background: T.tealDim, color: T.tealLight,
+  	  border: `1px solid ${T.tealBorder}`,
+  	  fontSize: '15px', fontWeight: 'bold', cursor: 'pointer',
+  	  fontFamily: 'Georgia, serif', marginBottom: '12px'
+	}}>
+  	  📥 Import from Book Buddy
+	</button>
           Sign Out
         </button>
       </div>

@@ -9,6 +9,7 @@ import Wishlist from './pages/Wishlist'
 import Pending from './pages/Pending'
 import Profile from './pages/Profile'
 import Layout from './components/Layout'
+import Import from './pages/Import'
 
 function App() {
   const [session, setSession] = useState(undefined)
