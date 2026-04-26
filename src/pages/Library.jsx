@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { T } from '../lib/theme'
+import BarcodeScanner from '../components/BarcodeScanner'
+import CoverUpload from '../components/CoverUpload'
 
 export default function Library() {
   const [books, setBooks] = useState([])
@@ -48,23 +50,13 @@ export default function Library() {
               {books.length} {books.length === 1 ? 'book' : 'books'} in your collection
             </p>
           </div>
-          <button onClick={() => setShowAdd(true)} style={{
-            background: T.teal, color: T.white, border: 'none',
-            borderRadius: '20px', padding: '10px 18px', fontSize: '14px',
-            fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif',
-            boxShadow: '0 4px 15px rgba(13,148,136,0.4)'
-          }}>+ Add Book</button>
+          <button onClick={() => setShowAdd(true)} style={{ background: T.teal, color: T.white, border: 'none', borderRadius: '20px', padding: '10px 18px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 15px rgba(13,148,136,0.4)' }}>+ Add Book</button>
         </div>
         <div style={{ position: 'relative' }}>
           <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px' }}>🔍</span>
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search by title, author, series..."
-            style={{
-              width: '100%', padding: '12px 16px 12px 40px', borderRadius: '12px',
-              border: `1px solid ${T.tealBorder}`, background: 'rgba(255,255,255,0.05)',
-              color: T.white, fontSize: '14px', boxSizing: 'border-box', outline: 'none',
-              fontFamily: 'Georgia, serif'
-            }} />
+            style={{ width: '100%', padding: '12px 16px 12px 40px', borderRadius: '12px', border: `1px solid ${T.tealBorder}`, background: 'rgba(255,255,255,0.05)', color: T.white, fontSize: '14px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Georgia, serif' }} />
         </div>
       </div>
 
@@ -197,7 +189,11 @@ function BookDetailModal({ book, onClose, onSave }) {
                 </select>
               </div>
               <div><label style={labelStyle}>Special Features</label><input value={form.special_features || ''} onChange={e => update('special_features', e.target.value)} style={inputStyle} /></div>
-              <div><label style={labelStyle}>Cover Image URL</label><input value={form.cover_image_url || ''} onChange={e => update('cover_image_url', e.target.value)} style={inputStyle} /></div>
+              <div>
+                <label style={labelStyle}>Cover Image</label>
+                <CoverUpload currentUrl={form.cover_image_url} onUploaded={url => update('cover_image_url', url)} />
+                <input value={form.cover_image_url || ''} onChange={e => update('cover_image_url', e.target.value)} placeholder="Or paste image URL" style={{ ...inputStyle, marginTop: '8px' }} />
+              </div>
               <div><label style={labelStyle}>Notes</label><textarea value={form.notes || ''} onChange={e => update('notes', e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' }} /></div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={() => setEditing(false)} style={{ flex: 1, padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: T.muted, border: `1px solid ${T.tealBorder}`, fontSize: '14px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>Cancel</button>
@@ -217,18 +213,20 @@ function AddBookModal({ onClose, onSave, userId }) {
   const [form, setForm] = useState({ title: '', author: '', series: '', volume_number: '', edition_name: '', isbn: '', publisher: '', publication_year: '', format: 'hardcover', special_features: '', notes: '', cover_image_url: '' })
   const [loading, setLoading] = useState(false)
   const [searching, setSearching] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
 
   function update(field, value) { setForm(f => ({ ...f, [field]: value })) }
 
-  async function searchISBN() {
-    if (!form.isbn) return
+  async function searchISBN(isbnOverride) {
+    const isbnToSearch = isbnOverride || form.isbn
+    if (!isbnToSearch) return
     setSearching(true)
     try {
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${form.isbn}`)
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbnToSearch}`)
       const data = await res.json()
       if (data.items?.length > 0) {
         const book = data.items[0].volumeInfo
-        setForm(f => ({ ...f, title: book.title || f.title, author: book.authors?.[0] || f.author, publisher: book.publisher || f.publisher, publication_year: book.publishedDate?.slice(0, 4) || f.publication_year, cover_image_url: book.imageLinks?.thumbnail?.replace('http:', 'https:') || f.cover_image_url }))
+        setForm(f => ({ ...f, isbn: isbnToSearch, title: book.title || f.title, author: book.authors?.[0] || f.author, publisher: book.publisher || f.publisher, publication_year: book.publishedDate?.slice(0, 4) || f.publication_year, cover_image_url: book.imageLinks?.thumbnail?.replace('http:', 'https:') || f.cover_image_url }))
       } else { alert('No book found for that ISBN.') }
     } catch { alert('Could not search. Please enter details manually.') }
     setSearching(false)
@@ -247,45 +245,63 @@ function AddBookModal({ onClose, onSave, userId }) {
   const labelStyle = { display: 'block', color: T.tealLight, fontWeight: 'bold', marginBottom: '6px', fontSize: '13px' }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, overflowY: 'auto', padding: '20px' }}>
-      <div style={{ background: T.surface, borderRadius: '20px', maxWidth: '480px', margin: '0 auto', overflow: 'hidden', border: `1px solid ${T.tealBorder}` }}>
-        <div style={{ background: T.header, padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ color: T.white, margin: 0, fontSize: '20px' }}>Add a Book</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.white, fontSize: '24px', cursor: 'pointer' }}>×</button>
-        </div>
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={labelStyle}>ISBN (optional — auto-fills details)</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input value={form.isbn} onChange={e => update('isbn', e.target.value)} placeholder="e.g. 9780385737951" style={{ ...inputStyle, flex: 1 }} />
-              <button onClick={searchISBN} disabled={searching} style={{ background: searching ? T.tealDim : T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' }}>
-                {searching ? '🔍...' : 'Look up'}
+    <>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, overflowY: 'auto', padding: '20px' }}>
+        <div style={{ background: T.surface, borderRadius: '20px', maxWidth: '480px', margin: '0 auto', overflow: 'hidden', border: `1px solid ${T.tealBorder}` }}>
+          <div style={{ background: T.header, padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ color: T.white, margin: 0, fontSize: '20px' }}>Add a Book</h2>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.white, fontSize: '24px', cursor: 'pointer' }}>×</button>
+          </div>
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={labelStyle}>ISBN (optional — auto-fills details)</label>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input value={form.isbn} onChange={e => update('isbn', e.target.value)} placeholder="e.g. 9780385737951" style={{ ...inputStyle, flex: 1 }} />
+                <button onClick={() => searchISBN()} disabled={searching} style={{ background: searching ? T.tealDim : T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '10px 14px', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                  {searching ? '🔍...' : 'Look up'}
+                </button>
+              </div>
+              <button onClick={() => setShowScanner(true)} style={{ width: '100%', padding: '10px', borderRadius: '8px', background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '13px', fontWeight: 'bold' }}>
+                📷 Scan Barcode Instead
               </button>
             </div>
+            <div><label style={labelStyle}>Title *</label><input value={form.title} onChange={e => update('title', e.target.value)} placeholder="Book title" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Author</label><input value={form.author} onChange={e => update('author', e.target.value)} placeholder="Author name" style={inputStyle} /></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div><label style={labelStyle}>Series</label><input value={form.series} onChange={e => update('series', e.target.value)} placeholder="Series name" style={inputStyle} /></div>
+              <div><label style={labelStyle}>Volume #</label><input value={form.volume_number} onChange={e => update('volume_number', e.target.value)} placeholder="e.g. 1" style={inputStyle} /></div>
+            </div>
+            <div><label style={labelStyle}>Edition Name</label><input value={form.edition_name} onChange={e => update('edition_name', e.target.value)} placeholder="e.g. Fairyloot Exclusive" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Format</label>
+              <select value={form.format} onChange={e => update('format', e.target.value)} style={inputStyle}>
+                <option value="hardcover">Hardcover</option>
+                <option value="paperback">Paperback</option>
+                <option value="ebook">Ebook</option>
+                <option value="audiobook">Audiobook</option>
+              </select>
+            </div>
+            <div><label style={labelStyle}>Special Features</label><input value={form.special_features} onChange={e => update('special_features', e.target.value)} placeholder="e.g. Sprayed edges, foiling, signed" style={inputStyle} /></div>
+            <div>
+              <label style={labelStyle}>Cover Image</label>
+              <CoverUpload currentUrl={form.cover_image_url} onUploaded={url => update('cover_image_url', url)} />
+              <input value={form.cover_image_url} onChange={e => update('cover_image_url', e.target.value)} placeholder="Or paste image URL" style={{ ...inputStyle, marginTop: '8px' }} />
+            </div>
+            <div><label style={labelStyle}>Notes</label><textarea value={form.notes} onChange={e => update('notes', e.target.value)} placeholder="Any extra notes..." rows={3} style={{ ...inputStyle, resize: 'vertical' }} /></div>
+            <button onClick={handleSave} disabled={loading} style={{ width: '100%', padding: '14px', borderRadius: '10px', background: T.teal, color: T.white, border: 'none', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 15px rgba(13,148,136,0.4)' }}>
+              {loading ? 'Saving...' : '✨ Add to My Library'}
+            </button>
           </div>
-          <div><label style={labelStyle}>Title *</label><input value={form.title} onChange={e => update('title', e.target.value)} placeholder="Book title" style={inputStyle} /></div>
-          <div><label style={labelStyle}>Author</label><input value={form.author} onChange={e => update('author', e.target.value)} placeholder="Author name" style={inputStyle} /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div><label style={labelStyle}>Series</label><input value={form.series} onChange={e => update('series', e.target.value)} placeholder="Series name" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Volume #</label><input value={form.volume_number} onChange={e => update('volume_number', e.target.value)} placeholder="e.g. 1" style={inputStyle} /></div>
-          </div>
-          <div><label style={labelStyle}>Edition Name</label><input value={form.edition_name} onChange={e => update('edition_name', e.target.value)} placeholder="e.g. Fairyloot Exclusive" style={inputStyle} /></div>
-          <div><label style={labelStyle}>Format</label>
-            <select value={form.format} onChange={e => update('format', e.target.value)} style={inputStyle}>
-              <option value="hardcover">Hardcover</option>
-              <option value="paperback">Paperback</option>
-              <option value="ebook">Ebook</option>
-              <option value="audiobook">Audiobook</option>
-            </select>
-          </div>
-          <div><label style={labelStyle}>Special Features</label><input value={form.special_features} onChange={e => update('special_features', e.target.value)} placeholder="e.g. Sprayed edges, foiling, signed" style={inputStyle} /></div>
-          <div><label style={labelStyle}>Cover Image URL</label><input value={form.cover_image_url} onChange={e => update('cover_image_url', e.target.value)} placeholder="Paste image URL or use ISBN lookup" style={inputStyle} /></div>
-          <div><label style={labelStyle}>Notes</label><textarea value={form.notes} onChange={e => update('notes', e.target.value)} placeholder="Any extra notes..." rows={3} style={{ ...inputStyle, resize: 'vertical' }} /></div>
-          <button onClick={handleSave} disabled={loading} style={{ width: '100%', padding: '14px', borderRadius: '10px', background: T.teal, color: T.white, border: 'none', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 15px rgba(13,148,136,0.4)' }}>
-            {loading ? 'Saving...' : '✨ Add to My Library'}
-          </button>
         </div>
       </div>
-    </div>
+      {showScanner && (
+        <BarcodeScanner
+          onDetected={(code) => {
+            setShowScanner(false)
+            searchISBN(code)
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+    </>
   )
 }
