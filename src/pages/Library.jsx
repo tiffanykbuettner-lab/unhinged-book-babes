@@ -249,6 +249,16 @@ function AddBookModal({ onClose, onSave, userId }) {
   async function handleSave() {
     if (!form.title) return alert('Please enter a title.')
     setLoading(true)
+    const { data: existing } = await supabase
+      .from('books')
+      .select('id, title, edition_name')
+      .eq('owner_id', userId)
+      .ilike('title', form.title.trim())
+    if (existing?.length > 0) {
+      const editions = existing.map(b => b.edition_name ? `${b.title} (${b.edition_name})` : b.title).join(', ')
+      const proceed = confirm(`You already have this title in your library:\n${editions}\n\nDo you want to add another version anyway?`)
+      if (!proceed) { setLoading(false); return }
+    }
     const { error } = await supabase.from('books').insert({ ...form, owner_id: userId, publication_year: form.publication_year ? parseInt(form.publication_year) : null })
     if (error) { alert('Error: ' + error.message); setLoading(false); return }
     setLoading(false)
