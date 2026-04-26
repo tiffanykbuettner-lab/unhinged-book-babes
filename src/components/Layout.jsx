@@ -3,11 +3,11 @@ import { T } from '../lib/theme'
 
 export default function Layout() {
   const navItems = [
-    { to: '/', label: 'Library', emoji: '📚' },
-    { to: '/friends', label: 'Friends', emoji: '👯' },
-    { to: '/wishlist', label: 'Wishlist', emoji: '⭐' },
+    { to: '/', label: 'Library', emoji: '📖' },
+    { to: '/friends', label: 'Friends', emoji: '👩‍👩‍👧' },
+    { to: '/wishlist', label: 'Wishlist', emoji: '💫' },
     { to: '/pending', label: 'Pending', emoji: '📦' },
-    { to: '/profile', label: 'Profile', emoji: '🌸' },
+    { to: '/profile', label: 'Profile', emoji: '💀' },
   ]
 
   return (
