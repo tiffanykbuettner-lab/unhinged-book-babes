@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
@@ -10,6 +10,11 @@ import Pending from './pages/Pending'
 import Profile from './pages/Profile'
 import Layout from './components/Layout'
 import Import from './pages/Import'
+
+function ImportWrapper() {
+  const navigate = useNavigate()
+  return <Import onDone={() => navigate('/')} />
+}
 
 function App() {
   const [session, setSession] = useState(undefined)
@@ -31,7 +36,7 @@ function App() {
       <Routes>
         <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
         <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/" />} />
-        <Route path="/import" element={session ? <Import onDone={() => window.location.href = '/'} /> : <Navigate to="/login" />} />
+        <Route path="/import" element={session ? <ImportWrapper /> : <Navigate to="/login" />} />
         <Route element={session ? <Layout /> : <Navigate to="/login" />}>
           <Route path="/" element={<Library />} />
           <Route path="/friends" element={<Friends />} />
