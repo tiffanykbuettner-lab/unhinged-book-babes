@@ -35,7 +35,7 @@ async function fixMissingCovers() {
       .from('books')
       .select('id, isbn, cover_image_url')
       .eq('owner_id', user.id)
-      .is('cover_image_url', null)
+      .or('cover_image_url.is.null,cover_image_url.eq.')
       .neq('isbn', '')
     
     const fixable = (books || []).filter(b => b.isbn && b.isbn.length >= 10)
