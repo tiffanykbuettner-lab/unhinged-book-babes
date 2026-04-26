@@ -31,6 +31,7 @@ function App() {
       <Routes>
         <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
         <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/" />} />
+        <Route path="/import" element={session ? <Import onDone={() => window.location.href = '/'} /> : <Navigate to="/login" />} />
         <Route element={session ? <Layout /> : <Navigate to="/login" />}>
           <Route path="/" element={<Library />} />
           <Route path="/friends" element={<Friends />} />
