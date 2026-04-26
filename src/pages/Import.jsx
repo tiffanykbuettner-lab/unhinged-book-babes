@@ -14,54 +14,27 @@ function parseCSV(text) {
     const next = text[i + 1]
 
     if (inQuotes) {
-      if (ch === '"' && next === '"') {
-        field += '"'
-        i += 2
-        continue
-      } else if (ch === '"') {
-        inQuotes = false
-        i++
-        continue
-      } else {
-        field += ch
-        i++
-        continue
-      }
+      if (ch === '"' && next === '"') { field += '"'; i += 2; continue }
+      if (ch === '"') { inQuotes = false; i++; continue }
+      field += ch; i++; continue
     }
 
-    if (ch === '"') {
-      inQuotes = true
-      i++
-      continue
-    }
-
-    if (ch === ',') {
-      row.push(field)
-      field = ''
-      i++
-      continue
-    }
+    if (ch === '"') { inQuotes = true; i++; continue }
+    if (ch === ',') { row.push(field); field = ''; i++; continue }
 
     if (ch === '\r' && next === '\n') {
-      row.push(field)
-      field = ''
+      row.push(field); field = ''
       if (row.some(f => f.length > 0)) results.push(row)
-      row = []
-      i += 2
-      continue
+      row = []; i += 2; continue
     }
 
     if (ch === '\n' || ch === '\r') {
-      row.push(field)
-      field = ''
+      row.push(field); field = ''
       if (row.some(f => f.length > 0)) results.push(row)
-      row = []
-      i++
-      continue
+      row = []; i++; continue
     }
 
-    field += ch
-    i++
+    field += ch; i++
   }
 
   if (field || row.length > 0) {
@@ -70,8 +43,6 @@ function parseCSV(text) {
   }
 
   return results
-}  if (current) lines[lines.length - 1]?.push(current.trim())
-  return lines.filter(l => l.length > 1)
 }
 
 function mapStatus(status) {
@@ -105,7 +76,6 @@ export default function Import({ onDone }) {
   const [step, setStep] = useState('upload')
   const [preview, setPreview] = useState([])
   const [parsed, setParsed] = useState([])
-  const [importing, setImporting] = useState(false)
   const [progress, setProgress] = useState(0)
   const [results, setResults] = useState(null)
   const [fileName, setFileName] = useState('')
@@ -117,35 +87,31 @@ export default function Import({ onDone }) {
     const reader = new FileReader()
     reader.onload = (ev) => {
       let text = ev.target.result
-      // Remove BOM if present
       if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1)
-      // Try comma delimiter first
       const rows = parseCSV(text)
-      if (rows.length < 2) { alert('Could not parse CSV file. Make sure you export as CSV from Book Buddy.'); return }
+      if (rows.length < 2) { alert('Could not parse CSV file.'); return }
       const headers = rows[0]
-      console.log('Headers found:', headers.slice(0, 5))
       const books = rows.slice(1).map(row => {
         const get = (col) => {
           const idx = headers.findIndex(h => h.trim().toLowerCase() === col.toLowerCase())
           return idx >= 0 ? (row[idx] || '').trim() : ''
         }
         return {
-          title: get('Title'),
-          author: get('Author'),
-          series: get('Series'),
-          volume_number: get('Volume'),
-          edition_name: get('Edition'),
-          publisher: get('Publisher'),
-          publication_year: get('Year Published') ? parseInt(get('Year Published')) : null,
-          format: mapFormat(get('Format')),
-          isbn: cleanISBN(get('ISBN')),
-          notes: get('Notes'),
-          read_status: mapStatus(get('Status')),
-          cover_image_url: get('Uploaded Image URL') || '',
+          title: get('title'),
+          author: get('author'),
+          series: get('series'),
+          volume_number: get('volume'),
+          edition_name: get('edition'),
+          publisher: get('publisher'),
+          publication_year: get('year published') ? parseInt(get('year published')) : null,
+          format: mapFormat(get('format')),
+          isbn: cleanISBN(get('isbn')),
+          notes: get('notes'),
+          read_status: mapStatus(get('status')),
+          cover_image_url: get('uploaded image url') || '',
           special_features: '',
         }
       }).filter(b => b.title && b.title.length > 0)
-      console.log('Books parsed:', books.length)
       setParsed(books)
       setPreview(books.slice(0, 5))
       setStep('preview')
@@ -154,7 +120,6 @@ export default function Import({ onDone }) {
   }
 
   async function handleImport() {
-    setImporting(true)
     setStep('importing')
     const { data: { user } } = await supabase.auth.getUser()
     const { data: existing } = await supabase.from('books').select('title').eq('owner_id', user.id)
@@ -175,7 +140,6 @@ export default function Import({ onDone }) {
     }
     setResults({ added, skipped, errors, total: parsed.length })
     setStep('done')
-    setImporting(false)
   }
 
   return (
@@ -186,7 +150,6 @@ export default function Import({ onDone }) {
       </div>
 
       <div style={{ padding: '20px', maxWidth: '480px', margin: '0 auto' }}>
-
         {step === 'upload' && (
           <div style={{ textAlign: 'center' }}>
             <div style={{ background: T.card, borderRadius: '16px', padding: '40px 24px', border: `2px dashed ${T.tealBorder}`, marginBottom: '20px' }}>
@@ -208,11 +171,8 @@ export default function Import({ onDone }) {
           <>
             <div style={{ background: T.card, borderRadius: '16px', padding: '20px', border: `1px solid ${T.tealBorder}`, marginBottom: '16px' }}>
               <p style={{ color: T.tealLight, margin: '0 0 4px', fontSize: '13px' }}>File: {fileName}</p>
-              <p style={{ color: T.white, margin: 0, fontSize: '20px', fontWeight: 'bold' }}>
-                {parsed.length} books found
-              </p>
+              <p style={{ color: T.white, margin: 0, fontSize: '20px', fontWeight: 'bold' }}>{parsed.length} books found</p>
             </div>
-
             <h3 style={{ color: T.tealLight, fontSize: '14px', marginBottom: '12px' }}>Preview (first 5):</h3>
             {preview.map((book, i) => (
               <div key={i} style={{ background: T.card, borderRadius: '12px', padding: '14px', marginBottom: '10px', border: `1px solid ${T.tealBorder}` }}>
@@ -225,11 +185,8 @@ export default function Import({ onDone }) {
                 </div>
               </div>
             ))}
-
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-              <button onClick={() => setStep('upload')} style={{ flex: 1, padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: T.muted, border: `1px solid ${T.tealBorder}`, fontSize: '14px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
-                Cancel
-              </button>
+              <button onClick={() => setStep('upload')} style={{ flex: 1, padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: T.muted, border: `1px solid ${T.tealBorder}`, fontSize: '14px', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>Cancel</button>
               <button onClick={handleImport} style={{ flex: 2, padding: '12px', borderRadius: '10px', background: T.teal, color: T.white, border: 'none', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 15px rgba(13,148,136,0.4)' }}>
                 ✨ Import {parsed.length} Books
               </button>
