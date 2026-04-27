@@ -44,7 +44,20 @@ async function fixMissingCovers() {
     for (let i = 0; i < fixable.length; i++) {
       const book = fixable[i]
       try {
-        // Try Google Books first
+        // Try Open Library first — most accurate for exact ISBN
+        const olUrl = `https://covers.openlibrary.org/b/isbn/${book.isbn}-L.jpg`
+        const olRes = await fetch(olUrl)
+        if (olRes.ok && olRes.headers.get('content-type')?.includes('image')) {
+          const blob = await olRes.blob()
+          if (blob.size > 5000) {
+            await supabase.from('books').update({ cover_image_url: olUrl }).eq('id', book.id)
+            fixed++
+            await new Promise(r => setTimeout(r, 300))
+            setFixProgress(Math.round(((i + 1) / fixable.length) * 100))
+            continue
+          }
+        }
+        // Fallback to Google Books
         const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}`)
         const data = await res.json()
         if (data.items?.length > 0) {
@@ -52,20 +65,10 @@ async function fixMissingCovers() {
           if (url) {
             await supabase.from('books').update({ cover_image_url: url }).eq('id', book.id)
             fixed++
-            await new Promise(r => setTimeout(r, 500))
-            setFixProgress(Math.round(((i + 1) / fixable.length) * 100))
-            continue
           }
         }
-        // Fallback to Open Library
-        const res2 = await fetch(`https://covers.openlibrary.org/b/isbn/${book.isbn}-M.jpg?default=false`)
-        if (res2.ok) {
-          const url = `https://covers.openlibrary.org/b/isbn/${book.isbn}-M.jpg`
-          await supabase.from('books').update({ cover_image_url: url }).eq('id', book.id)
-          fixed++
-        }
       } catch {}
-      await new Promise(r => setTimeout(r, 500))
+      await new Promise(r => setTimeout(r, 300))
       setFixProgress(Math.round(((i + 1) / fixable.length) * 100))
     }
 
