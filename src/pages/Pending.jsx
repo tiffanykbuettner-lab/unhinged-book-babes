@@ -7,6 +7,7 @@ export default function Pending() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+  const [editingItem, setEditingItem] = useState(null)
   const [user, setUser] = useState(null)
 
   useEffect(() => {
@@ -77,14 +78,19 @@ export default function Pending() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <p style={{ margin: 0, fontWeight: 'bold', color: T.white, fontSize: '15px' }}>{item.title}</p>
                         {item.author && <p style={{ margin: '2px 0', color: T.tealLight, fontSize: '13px' }}>{item.author}</p>}
                         {item.edition_name && <p style={{ margin: '2px 0', color: T.muted, fontSize: '12px' }}>{item.edition_name}</p>}
                       </div>
-                      <span style={{ background: status.bg, color: status.color, fontSize: '11px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '10px', border: `1px solid ${status.border}`, whiteSpace: 'nowrap', marginLeft: '8px' }}>
-                        {status.label}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '8px' }}>
+                        <span style={{ background: status.bg, color: status.color, fontSize: '11px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '10px', border: `1px solid ${status.border}`, whiteSpace: 'nowrap' }}>
+                          {status.label}
+                        </span>
+                        <button onClick={() => setEditingItem(item)} style={{ background: 'rgba(255,255,255,0.08)', border: `1px solid ${T.tealBorder}`, borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontSize: '12px', color: T.muted }}>
+                          ✏️
+                        </button>
+                      </div>
                     </div>
                     {item.source && <p style={{ margin: '6px 0 0', color: T.muted, fontSize: '12px' }}>🛍️ {item.source}</p>}
                     {item.expected_arrival && <p style={{ margin: '2px 0 0', color: T.muted, fontSize: '12px' }}>📅 Expected: {new Date(item.expected_arrival).toLocaleDateString()}</p>}
@@ -100,28 +106,54 @@ export default function Pending() {
         )}
       </div>
 
-      {showAdd && <AddPendingModal onClose={() => setShowAdd(false)} onSave={() => { setShowAdd(false); fetchItems(user.id) }} userId={user.id} />}
+      {showAdd && (
+        <PendingModal
+          onClose={() => setShowAdd(false)}
+          onSave={() => { setShowAdd(false); fetchItems(user.id) }}
+          userId={user.id}
+        />
+      )}
+      {editingItem && (
+        <PendingModal
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onSave={() => { setEditingItem(null); fetchItems(user.id) }}
+          userId={user.id}
+        />
+      )}
     </div>
   )
 }
 
-function AddPendingModal({ onClose, onSave, userId }) {
-  const [form, setForm] = useState({ title: '', author: '', edition_name: '', cover_image_url: '', source: '', order_date: '', expected_arrival: '', status: 'ordered', notes: '' })
+function PendingModal({ item, onClose, onSave, userId }) {
+  const isEdit = !!item
+  const [form, setForm] = useState({
+    title: item?.title || '',
+    author: item?.author || '',
+    edition_name: item?.edition_name || '',
+    cover_image_url: item?.cover_image_url || '',
+    source: item?.source || '',
+    order_date: item?.order_date || '',
+    expected_arrival: item?.expected_arrival || '',
+    status: item?.status || 'ordered',
+    notes: item?.notes || '',
+  })
   const [loading, setLoading] = useState(false)
   const [titleSuggestions, setTitleSuggestions] = useState([])
   const [authorSuggestions, setAuthorSuggestions] = useState([])
+  const [editionSuggestions, setEditionSuggestions] = useState([])
 
   useEffect(() => {
     async function fetchSuggestions() {
-      // Pull from books, wishlist, and pending so all known titles/authors are available
       const [{ data: booksData }, { data: wishlistData }, { data: pendingData }] = await Promise.all([
-        supabase.from('books').select('title, author').eq('owner_id', userId),
-        supabase.from('wishlist').select('title, author').eq('owner_id', userId),
-        supabase.from('pending_purchases').select('title, author').eq('owner_id', userId),
+        supabase.from('books').select('title, author, edition_name').eq('owner_id', userId),
+        supabase.from('wishlist').select('title, author, edition_preference').eq('owner_id', userId),
+        supabase.from('pending_purchases').select('title, author, edition_name').eq('owner_id', userId),
       ])
       const combined = [...(booksData || []), ...(wishlistData || []), ...(pendingData || [])]
       setTitleSuggestions([...new Set(combined.map(b => b.title?.trim()).filter(Boolean))])
       setAuthorSuggestions([...new Set(combined.map(b => b.author?.trim()).filter(Boolean))])
+      setEditionSuggestions([...new Set(combined.map(b => (b.edition_name || b.edition_preference)?.trim()).filter(Boolean))])
     }
     fetchSuggestions()
   }, [userId])
@@ -131,8 +163,14 @@ function AddPendingModal({ onClose, onSave, userId }) {
   async function handleSave() {
     if (!form.title) return alert('Please enter a title.')
     setLoading(true)
-    const payload = { ...form, owner_id: userId, order_date: form.order_date || null, expected_arrival: form.expected_arrival || null }
-    const { error } = await supabase.from('pending_purchases').insert(payload)
+    const payload = {
+      ...form,
+      order_date: form.order_date || null,
+      expected_arrival: form.expected_arrival || null,
+    }
+    const { error } = isEdit
+      ? await supabase.from('pending_purchases').update(payload).eq('id', item.id)
+      : await supabase.from('pending_purchases').insert({ ...payload, owner_id: userId })
     if (error) { alert('Error: ' + error.message); setLoading(false); return }
     setLoading(false)
     onSave()
@@ -146,7 +184,7 @@ function AddPendingModal({ onClose, onSave, userId }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, overflowY: 'auto', padding: '20px' }}>
       <div style={{ background: T.surface, borderRadius: '20px', maxWidth: '480px', margin: '0 auto', overflow: 'hidden', border: `1px solid ${T.tealBorder}` }}>
         <div style={{ background: T.header, padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ color: T.white, margin: 0, fontSize: '20px' }}>Add Pending Purchase</h2>
+          <h2 style={{ color: T.white, margin: 0, fontSize: '20px' }}>{isEdit ? 'Edit Pending' : 'Add Pending Purchase'}</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.white, fontSize: '24px', cursor: 'pointer' }}>×</button>
         </div>
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -158,8 +196,12 @@ function AddPendingModal({ onClose, onSave, userId }) {
             <label style={labelStyle}>Author</label>
             <Autocomplete value={form.author} onChange={v => update('author', v)} suggestions={authorSuggestions} placeholder="Author name" style={inputStyle} />
           </div>
-          <div><label style={labelStyle}>Edition Name</label><input value={form.edition_name} onChange={e => update('edition_name', e.target.value)} placeholder="e.g. Fairyloot Exclusive" style={inputStyle} /></div>
-          <div><label style={labelStyle}>Status</label>
+          <div>
+            <label style={labelStyle}>Edition Name</label>
+            <Autocomplete value={form.edition_name} onChange={v => update('edition_name', v)} suggestions={editionSuggestions} placeholder="e.g. Fairyloot Exclusive" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Status</label>
             <select value={form.status} onChange={e => update('status', e.target.value)} style={inputStyle}>
               <option value="preordered">Preordered</option>
               <option value="ordered">Ordered</option>
@@ -186,7 +228,7 @@ function AddPendingModal({ onClose, onSave, userId }) {
           </div>
           <div><label style={labelStyle}>Notes</label><textarea value={form.notes} onChange={e => update('notes', e.target.value)} placeholder="e.g. Comes with exclusive art print!" rows={3} style={{ ...inputStyle, resize: 'vertical' }} /></div>
           <button onClick={handleSave} disabled={loading} style={{ width: '100%', padding: '14px', borderRadius: '10px', background: T.teal, color: T.white, border: 'none', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 15px rgba(13,148,136,0.4)' }}>
-            {loading ? 'Saving...' : '📦 Add to Pending'}
+            {loading ? 'Saving...' : isEdit ? '✏️ Save Changes' : '📦 Add to Pending'}
           </button>
         </div>
       </div>
