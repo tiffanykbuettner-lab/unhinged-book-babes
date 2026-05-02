@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { T } from '../lib/theme'
+import Avatar from '../components/Avatar'
 
 export default function Friends() {
   const [friends, setFriends] = useState([])
@@ -53,9 +54,7 @@ export default function Friends() {
                 style={{ background: T.card, borderRadius: '16px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: '16px', border: `1px solid ${T.tealBorder}`, cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'border-color 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = T.goldBorder}
                 onMouseLeave={e => e.currentTarget.style.borderColor = T.tealBorder}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.tealBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
-                  {friend.avatar_url ? <img src={friend.avatar_url} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : '💀'}
-                </div>
+                <Avatar profile={friend} size={56} />
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontWeight: 'bold', color: T.white, fontSize: '17px', fontFamily: 'Georgia, serif' }}>{friend.display_name || 'Book Babe'}</p>
                   <p style={{ margin: '4px 0 0', color: T.tealLight, fontSize: '13px' }}>📖 {friend.bookCount} {friend.bookCount === 1 ? 'book' : 'books'} in their library</p>
@@ -128,7 +127,7 @@ function FriendLibrary({ friend, onBack, currentUser }) {
           ← Back to Friends
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.tealBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>💀</div>
+          <Avatar profile={friend} size={44} />
           <h1 style={{ color: T.white, margin: 0, fontSize: '20px' }}>{friend.display_name}'s Collection</h1>
         </div>
         <div style={{ display: 'flex', gap: '0' }}>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { T } from '../lib/theme'
+import Avatar from '../components/Avatar'
+import AvatarPicker from '../components/AvatarPicker'
 
 export default function Profile() {
   const [profile, setProfile] = useState(null)
@@ -11,6 +13,7 @@ export default function Profile() {
   const [savingName, setSavingName] = useState(false)
   const [fixingCovers, setFixingCovers] = useState(false)
   const [fixProgress, setFixProgress] = useState(0)
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
 
   useEffect(() => {
     async function fetchProfile() {
@@ -99,9 +102,19 @@ export default function Profile() {
   return (
     <div style={{ fontFamily: 'Georgia, serif', background: T.bg, minHeight: '100vh' }}>
       <div style={{ background: T.header, padding: '32px 20px 48px', textAlign: 'center' }}>
-        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.tealBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px', margin: '0 auto 16px' }}>
-          💀
-        </div>
+        <div style={{ position: 'relative', display: 'inline-block', marginBottom: '16px' }}>
+  	  <Avatar profile={profile} size={80} />
+  	  <button onClick={() => setShowAvatarPicker(true)} style={{ position: 'absolute', bottom: 0, right: 0, background: T.teal, border: 'none', borderRadius: '50%', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+   	   ✏️
+  	  </button>
+	{showAvatarPicker && (
+  	  <AvatarPicker
+    	    currentAvatar={profile?.avatar_url}
+   	    onSaved={(url) => setProfile(p => ({ ...p, avatar_url: url }))}
+    	    onClose={() => setShowAvatarPicker(false)}
+  	  />
+	)}
+	</div>
 
         {/* Editable name */}
         {editingName ? (
