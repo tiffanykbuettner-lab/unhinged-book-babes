@@ -30,13 +30,21 @@ export default function Wishlist() {
     fetchItems(user.id)
   }
 
+  async function markReceived(item) {
+    await supabase.from('wishlist').delete().eq('id', item.id)
+    fetchItems(user.id)
+  }
+
+  const pendingItems = items.filter(i => !i.gifted_at)
+  const giftedItems = items.filter(i => i.gifted_at)
+
   return (
     <div style={{ fontFamily: 'Georgia, serif', background: T.bg, minHeight: '100vh' }}>
       <div style={{ background: T.header, padding: '24px 20px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ color: T.white, margin: 0, fontSize: '24px' }}>💫 Wishlist</h1>
           <p style={{ color: T.tealLight, margin: '4px 0 0', fontSize: '13px' }}>
-            {items.length} {items.length === 1 ? 'book' : 'books'} you want
+            {pendingItems.length} {pendingItems.length === 1 ? 'book' : 'books'} you want
           </p>
         </div>
         <button onClick={() => setShowAdd(true)} style={{ background: T.teal, color: T.white, border: 'none', borderRadius: '20px', padding: '10px 18px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 15px rgba(13,148,136,0.4)' }}>
@@ -54,33 +62,66 @@ export default function Wishlist() {
             <p style={{ color: T.muted, fontSize: '14px' }}>Add books you're hoping to get.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {items.map(item => (
-              <div key={item.id} style={{ background: T.card, borderRadius: '14px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', display: 'flex', gap: '12px', border: `1px solid ${T.tealBorder}` }}>
-                <div style={{ width: '60px', height: '80px', background: T.surface, borderRadius: '8px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: `1px solid ${T.tealBorder}` }}>
-                  {item.cover_image_url
-                    ? <img src={item.cover_image_url} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <span style={{ fontSize: '24px' }}>📚</span>}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 'bold', color: T.white, fontSize: '15px' }}>{item.title}</p>
-                      {item.author && <p style={{ margin: '2px 0', color: T.tealLight, fontSize: '13px' }}>{item.author}</p>}
-                    </div>
-                    {/* Owner never sees claimed status */}
-                    <button onClick={() => deleteItem(item.id)} style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', fontSize: '16px', padding: '0', marginLeft: '8px' }}>✕</button>
-                  </div>
-                  {item.edition_preference && <p style={{ margin: '6px 0 0', color: T.goldLight, fontSize: '12px' }}>📌 {item.edition_preference}</p>}
-                  {item.notes && <p style={{ margin: '4px 0 0', color: T.muted, fontSize: '12px', fontStyle: 'italic' }}>{item.notes}</p>}
-                </div>
+          <>
+            {/* Pending wishlist items */}
+            {pendingItems.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: giftedItems.length > 0 ? '24px' : 0 }}>
+                {pendingItems.map(item => (
+                  <WishlistCard key={item.id} item={item} onDelete={() => deleteItem(item.id)} />
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+
+            {/* Gifted items — owner sees these with a Mark as Received button */}
+            {giftedItems.length > 0 && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <span style={{ color: T.goldLight, fontSize: '14px', fontWeight: 'bold' }}>🎁 Incoming Gifts</span>
+                  <div style={{ flex: 1, height: '1px', background: T.goldBorder }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {giftedItems.map(item => (
+                    <WishlistCard key={item.id} item={item} isGifted onMarkReceived={() => markReceived(item)} />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
         )}
       </div>
 
       {showAdd && <AddWishlistModal onClose={() => setShowAdd(false)} onSave={() => { setShowAdd(false); fetchItems(user.id) }} userId={user.id} />}
+    </div>
+  )
+}
+
+function WishlistCard({ item, onDelete, isGifted, onMarkReceived }) {
+  return (
+    <div style={{ background: T.card, borderRadius: '14px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', display: 'flex', gap: '12px', border: `1px solid ${isGifted ? T.goldBorder : T.tealBorder}` }}>
+      <div style={{ width: '60px', height: '80px', background: T.surface, borderRadius: '8px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: `1px solid ${T.tealBorder}` }}>
+        {item.cover_image_url
+          ? <img src={item.cover_image_url} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <span style={{ fontSize: '24px' }}>📚</span>}
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <p style={{ margin: 0, fontWeight: 'bold', color: T.white, fontSize: '15px' }}>{item.title}</p>
+            {item.author && <p style={{ margin: '2px 0', color: T.tealLight, fontSize: '13px' }}>{item.author}</p>}
+          </div>
+          {/* Owner never sees claimed status — only delete for pending, nothing for gifted */}
+          {!isGifted && (
+            <button onClick={onDelete} style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', fontSize: '16px', padding: '0', marginLeft: '8px' }}>✕</button>
+          )}
+        </div>
+        {item.edition_preference && <p style={{ margin: '6px 0 0', color: T.goldLight, fontSize: '12px' }}>📌 {item.edition_preference}</p>}
+        {item.notes && <p style={{ margin: '4px 0 0', color: T.muted, fontSize: '12px', fontStyle: 'italic' }}>{item.notes}</p>}
+        {isGifted && (
+          <button onClick={onMarkReceived} style={{ marginTop: '10px', background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, borderRadius: '8px', padding: '6px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+            🎉 Mark as Received
+          </button>
+        )}
+      </div>
     </div>
   )
 }

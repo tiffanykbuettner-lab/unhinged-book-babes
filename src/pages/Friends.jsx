@@ -81,6 +81,7 @@ function FriendLibrary({ friend, onBack, currentUser }) {
   async function fetchData() {
     const [{ data: books }, { data: wishlist }] = await Promise.all([
       supabase.from('books').select('*').eq('owner_id', friend.id).order('created_at', { ascending: false }),
+      // Only show items not yet gifted — hides gifted items from friends' view
       supabase.from('wishlist').select('*').eq('owner_id', friend.id).is('gifted_at', null).order('created_at', { ascending: false })
     ])
     setBooks(books || [])
@@ -100,8 +101,7 @@ function FriendLibrary({ friend, onBack, currentUser }) {
     fetchData()
   }
 
-  async function markPurchased(item) {
-    if (!confirm(`Mark "${item.title}" as purchased for ${friend.display_name}?`)) return
+  async function markGifted(item) {
     const now = new Date().toISOString()
     await supabase.from('gift_history').insert({
       gifted_by: currentUser.id,
@@ -113,7 +113,6 @@ function FriendLibrary({ friend, onBack, currentUser }) {
     })
     await supabase.from('wishlist').update({ gifted_at: now }).eq('id', item.id)
     fetchData()
-    alert(`🎉 Marked as purchased! This will disappear from ${friend.display_name}'s wishlist.`)
   }
 
   const filtered = search.trim()
@@ -201,8 +200,8 @@ function FriendLibrary({ friend, onBack, currentUser }) {
                     {item.edition_preference && <p style={{ margin: '4px 0 0', color: T.goldLight, fontSize: '12px' }}>📌 {item.edition_preference}</p>}
                     {item.notes && <p style={{ margin: '4px 0 0', color: T.muted, fontSize: '12px', fontStyle: 'italic' }}>{item.notes}</p>}
                     {item.claimed_by === currentUser?.id && (
-                      <button onClick={() => markPurchased(item)} style={{ marginTop: '8px', background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
-                        🎁 Mark as Purchased
+                      <button onClick={() => markGifted(item)} style={{ marginTop: '8px', background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+                        🎁 Mark as Gifted
                       </button>
                     )}
                   </div>
