@@ -147,8 +147,8 @@ export default function BarcodeScanner({ onDetected, onClose, bulkMode = false, 
           </div>
         </div>
       ) : (
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          <div ref={scannerRef} style={{ width: '100%', height: '100%', background: '#000' }} />
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: '300px' }}>
+          <div ref={scannerRef} style={{ width: '100%', height: '100%', background: '#000', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
 
           {/* Targeting overlay */}
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
