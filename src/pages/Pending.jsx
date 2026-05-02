@@ -131,7 +131,8 @@ function AddPendingModal({ onClose, onSave, userId }) {
   async function handleSave() {
     if (!form.title) return alert('Please enter a title.')
     setLoading(true)
-    const { error } = await supabase.from('pending_purchases').insert({ ...form, owner_id: userId })
+    const payload = { ...form, owner_id: userId, order_date: form.order_date || null, expected_arrival: form.expected_arrival || null }
+    const { error } = await supabase.from('pending_purchases').insert(payload)
     if (error) { alert('Error: ' + error.message); setLoading(false); return }
     setLoading(false)
     onSave()
