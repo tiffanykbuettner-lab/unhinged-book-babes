@@ -18,13 +18,11 @@ export default function Friends() {
   async function fetchFriends(currentUserId) {
     const { data: profiles } = await supabase
       .from('profiles').select('*').neq('id', currentUserId)
-
     const enriched = await Promise.all((profiles || []).map(async friend => {
       const { count } = await supabase
         .from('books').select('*', { count: 'exact', head: true }).eq('owner_id', friend.id)
       return { ...friend, bookCount: count || 0 }
     }))
-
     setFriends(enriched)
     setLoading(false)
   }
@@ -37,11 +35,8 @@ export default function Friends() {
     <div style={{ fontFamily: 'Georgia, serif', background: T.bg, minHeight: '100vh' }}>
       <div style={{ background: T.header, padding: '24px 20px 20px' }}>
         <h1 style={{ color: T.white, margin: 0, fontSize: '24px' }}>👯‍♀️ Friends</h1>
-        <p style={{ color: T.tealLight, margin: '4px 0 0', fontSize: '13px' }}>
-          Browse your fellow Book Babes' libraries
-        </p>
+        <p style={{ color: T.tealLight, margin: '4px 0 0', fontSize: '13px' }}>Browse your fellow Book Babes' libraries</p>
       </div>
-
       <div style={{ padding: '16px' }}>
         {loading ? (
           <p style={{ color: T.muted, textAlign: 'center', marginTop: '40px' }}>Loading...</p>
@@ -59,15 +54,11 @@ export default function Friends() {
                 onMouseEnter={e => e.currentTarget.style.borderColor = T.goldBorder}
                 onMouseLeave={e => e.currentTarget.style.borderColor = T.tealBorder}>
                 <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.tealBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
-                  {friend.avatar_url
-                    ? <img src={friend.avatar_url} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                    : '💀'}
+                  {friend.avatar_url ? <img src={friend.avatar_url} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : '💀'}
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontWeight: 'bold', color: T.white, fontSize: '17px', fontFamily: 'Georgia, serif' }}>{friend.display_name || 'Book Babe'}</p>
-                  <p style={{ margin: '4px 0 0', color: T.tealLight, fontSize: '13px' }}>
-                    📖 {friend.bookCount} {friend.bookCount === 1 ? 'book' : 'books'} in their library
-                  </p>
+                  <p style={{ margin: '4px 0 0', color: T.tealLight, fontSize: '13px' }}>📖 {friend.bookCount} {friend.bookCount === 1 ? 'book' : 'books'} in their library</p>
                 </div>
                 <span style={{ color: T.goldLight, fontSize: '20px' }}>→</span>
               </button>
@@ -109,10 +100,10 @@ function FriendLibrary({ friend, onBack, currentUser }) {
     await supabase.from('wishlist').update({ claimed_by: null, claimed_at: null }).eq('id', item.id)
     fetchData()
   }
+
   async function markPurchased(item) {
     if (!confirm(`Mark "${item.title}" as purchased for ${friend.display_name}?`)) return
     const now = new Date().toISOString()
-    // Add to gift history
     await supabase.from('gift_history').insert({
       gifted_by: currentUser.id,
       gifted_to: friend.id,
@@ -121,11 +112,11 @@ function FriendLibrary({ friend, onBack, currentUser }) {
       occasion: 'Wishlist Gift',
       gifted_at: now
     })
-    // Mark wishlist item as gifted
     await supabase.from('wishlist').update({ gifted_at: now }).eq('id', item.id)
     fetchData()
     alert(`🎉 Marked as purchased! This will disappear from ${friend.display_name}'s wishlist.`)
   }
+
   const filtered = search.trim()
     ? books.filter(b => b.title?.toLowerCase().includes(search.toLowerCase()) || b.author?.toLowerCase().includes(search.toLowerCase()))
     : books
@@ -137,9 +128,7 @@ function FriendLibrary({ friend, onBack, currentUser }) {
           ← Back to Friends
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.tealBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>
-            💀
-          </div>
+          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: T.tealDim, border: `2px solid ${T.tealBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>💀</div>
           <h1 style={{ color: T.white, margin: 0, fontSize: '20px' }}>{friend.display_name}'s Collection</h1>
         </div>
         <div style={{ display: 'flex', gap: '0' }}>
@@ -200,43 +189,46 @@ function FriendLibrary({ friend, onBack, currentUser }) {
           )
         ) : (
           wishlist.length === 0 ? (
-  <div style={{ textAlign: 'center', marginTop: '60px' }}>
-    <p style={{ color: T.muted }}>Their wishlist is empty.</p>
-  </div>
-) : (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-    {wishlist.filter(item => !item.gifted_at).map(item => (
-      <div key={item.id} style={{ background: T.card, borderRadius: '14px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', display: 'flex', gap: '12px', alignItems: 'center', border: `1px solid ${T.tealBorder}` }}>
-        <div style={{ flex: 1 }}>
-          <p style={{ margin: 0, fontWeight: 'bold', color: T.white, fontSize: '15px' }}>{item.title}</p>
-          {item.author && <p style={{ margin: '2px 0', color: T.tealLight, fontSize: '13px' }}>{item.author}</p>}
-          {item.edition_preference && <p style={{ margin: '4px 0 0', color: T.goldLight, fontSize: '12px' }}>📌 {item.edition_preference}</p>}
-          {item.notes && <p style={{ margin: '4px 0 0', color: T.muted, fontSize: '12px', fontStyle: 'italic' }}>{item.notes}</p>}
-          {/* If current user claimed it, show Mark as Purchased */}
-          {item.claimed_by === currentUser?.id && (
-            <button onClick={() => markPurchased(item)} style={{ marginTop: '8px', background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
-              🎁 Mark as Purchased
-            </button>
-          )}
-        </div>
-        {item.claimed_by ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-            <span style={{ background: T.goldDim, color: T.goldLight, fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', borderRadius: '10px', border: `1px solid ${T.goldBorder}`, whiteSpace: 'nowrap' }}>
-              🎁 Claimed
-            </span>
-            {item.claimed_by === currentUser?.id && (
-              <button onClick={() => unclaimItem(item)} style={{ background: 'none', border: 'none', color: T.muted, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}>
-                Unclaim
-              </button>
-            )}
-          </div>
-        ) : (
-          <button onClick={() => claimItem(item)} style={{ background: T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(13,148,136,0.3)' }}>
-            🎁 Claim
-          </button>
+            <div style={{ textAlign: 'center', marginTop: '60px' }}>
+              <p style={{ color: T.muted }}>Their wishlist is empty.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {wishlist.map(item => (
+                <div key={item.id} style={{ background: T.card, borderRadius: '14px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', display: 'flex', gap: '12px', alignItems: 'center', border: `1px solid ${T.tealBorder}` }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: 0, fontWeight: 'bold', color: T.white, fontSize: '15px' }}>{item.title}</p>
+                    {item.author && <p style={{ margin: '2px 0', color: T.tealLight, fontSize: '13px' }}>{item.author}</p>}
+                    {item.edition_preference && <p style={{ margin: '4px 0 0', color: T.goldLight, fontSize: '12px' }}>📌 {item.edition_preference}</p>}
+                    {item.notes && <p style={{ margin: '4px 0 0', color: T.muted, fontSize: '12px', fontStyle: 'italic' }}>{item.notes}</p>}
+                    {item.claimed_by === currentUser?.id && (
+                      <button onClick={() => markPurchased(item)} style={{ marginTop: '8px', background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+                        🎁 Mark as Purchased
+                      </button>
+                    )}
+                  </div>
+                  {item.claimed_by ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ background: T.goldDim, color: T.goldLight, fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', borderRadius: '10px', border: `1px solid ${T.goldBorder}`, whiteSpace: 'nowrap' }}>
+                        🎁 Claimed
+                      </span>
+                      {item.claimed_by === currentUser?.id && (
+                        <button onClick={() => unclaimItem(item)} style={{ background: 'none', border: 'none', color: T.muted, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}>
+                          Unclaim
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <button onClick={() => claimItem(item)} style={{ background: T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(13,148,136,0.3)' }}>
+                      🎁 Claim
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
-    ))}
-  </div>
-)
+    </div>
+  )
 }
