@@ -20,7 +20,6 @@ export default function Wishlist() {
       .from('wishlist')
       .select('*')
       .eq('owner_id', userId)
-      .is('gifted_at', null)
       .order('created_at', { ascending: false })
     setItems(data || [])
     setLoading(false)
