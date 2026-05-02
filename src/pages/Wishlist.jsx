@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { T } from '../lib/theme'
+import Autocomplete from '../components/Autocomplete'
 
 export default function Wishlist() {
   const [items, setItems] = useState([])
@@ -94,6 +95,22 @@ function WishlistCard({ item, onDelete }) {
 function AddWishlistModal({ onClose, onSave, userId }) {
   const [form, setForm] = useState({ title: '', author: '', edition_preference: '', cover_image_url: '', notes: '' })
   const [loading, setLoading] = useState(false)
+  const [titleSuggestions, setTitleSuggestions] = useState([])
+  const [authorSuggestions, setAuthorSuggestions] = useState([])
+
+  useEffect(() => {
+    async function fetchSuggestions() {
+      // Pull from both wishlist and books so suggestions are as rich as possible
+      const [{ data: wishlistData }, { data: booksData }] = await Promise.all([
+        supabase.from('wishlist').select('title, author').eq('owner_id', userId),
+        supabase.from('books').select('title, author').eq('owner_id', userId),
+      ])
+      const combined = [...(wishlistData || []), ...(booksData || [])]
+      setTitleSuggestions([...new Set(combined.map(b => b.title?.trim()).filter(Boolean))])
+      setAuthorSuggestions([...new Set(combined.map(b => b.author?.trim()).filter(Boolean))])
+    }
+    fetchSuggestions()
+  }, [userId])
 
   function update(field, value) { setForm(f => ({ ...f, [field]: value })) }
 
@@ -117,8 +134,14 @@ function AddWishlistModal({ onClose, onSave, userId }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.white, fontSize: '24px', cursor: 'pointer' }}>×</button>
         </div>
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div><label style={labelStyle}>Title *</label><input value={form.title} onChange={e => update('title', e.target.value)} placeholder="Book title" style={inputStyle} /></div>
-          <div><label style={labelStyle}>Author</label><input value={form.author} onChange={e => update('author', e.target.value)} placeholder="Author name" style={inputStyle} /></div>
+          <div>
+            <label style={labelStyle}>Title *</label>
+            <Autocomplete value={form.title} onChange={v => update('title', v)} suggestions={titleSuggestions} placeholder="Book title" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Author</label>
+            <Autocomplete value={form.author} onChange={v => update('author', v)} suggestions={authorSuggestions} placeholder="Author name" style={inputStyle} />
+          </div>
           <div><label style={labelStyle}>Edition Preference</label><input value={form.edition_preference} onChange={e => update('edition_preference', e.target.value)} placeholder="e.g. B&N exclusive only, any edition fine" style={inputStyle} /></div>
           <div><label style={labelStyle}>Cover Image URL</label><input value={form.cover_image_url} onChange={e => update('cover_image_url', e.target.value)} placeholder="Paste an image URL" style={inputStyle} /></div>
           <div><label style={labelStyle}>Notes</label><textarea value={form.notes} onChange={e => update('notes', e.target.value)} placeholder="Anything else to know?" rows={3} style={{ ...inputStyle, resize: 'vertical' }} /></div>

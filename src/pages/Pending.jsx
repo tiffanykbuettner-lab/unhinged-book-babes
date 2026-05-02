@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { T } from '../lib/theme'
+import Autocomplete from '../components/Autocomplete'
 
 export default function Pending() {
   const [items, setItems] = useState([])
@@ -107,6 +108,23 @@ export default function Pending() {
 function AddPendingModal({ onClose, onSave, userId }) {
   const [form, setForm] = useState({ title: '', author: '', edition_name: '', cover_image_url: '', source: '', order_date: '', expected_arrival: '', status: 'ordered', notes: '' })
   const [loading, setLoading] = useState(false)
+  const [titleSuggestions, setTitleSuggestions] = useState([])
+  const [authorSuggestions, setAuthorSuggestions] = useState([])
+
+  useEffect(() => {
+    async function fetchSuggestions() {
+      // Pull from books, wishlist, and pending so all known titles/authors are available
+      const [{ data: booksData }, { data: wishlistData }, { data: pendingData }] = await Promise.all([
+        supabase.from('books').select('title, author').eq('owner_id', userId),
+        supabase.from('wishlist').select('title, author').eq('owner_id', userId),
+        supabase.from('pending_purchases').select('title, author').eq('owner_id', userId),
+      ])
+      const combined = [...(booksData || []), ...(wishlistData || []), ...(pendingData || [])]
+      setTitleSuggestions([...new Set(combined.map(b => b.title?.trim()).filter(Boolean))])
+      setAuthorSuggestions([...new Set(combined.map(b => b.author?.trim()).filter(Boolean))])
+    }
+    fetchSuggestions()
+  }, [userId])
 
   function update(field, value) { setForm(f => ({ ...f, [field]: value })) }
 
@@ -121,6 +139,7 @@ function AddPendingModal({ onClose, onSave, userId }) {
 
   const inputStyle = { width: '100%', padding: '10px 12px', borderRadius: '8px', border: `1px solid ${T.tealBorder}`, background: 'rgba(255,255,255,0.05)', color: T.white, fontSize: '14px', boxSizing: 'border-box', outline: 'none', fontFamily: 'Georgia, serif' }
   const labelStyle = { display: 'block', color: T.tealLight, fontWeight: 'bold', marginBottom: '6px', fontSize: '13px' }
+  const optionalLabelStyle = { ...labelStyle, display: 'flex', alignItems: 'center', gap: '6px' }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, overflowY: 'auto', padding: '20px' }}>
@@ -130,8 +149,14 @@ function AddPendingModal({ onClose, onSave, userId }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.white, fontSize: '24px', cursor: 'pointer' }}>×</button>
         </div>
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div><label style={labelStyle}>Title *</label><input value={form.title} onChange={e => update('title', e.target.value)} placeholder="Book title" style={inputStyle} /></div>
-          <div><label style={labelStyle}>Author</label><input value={form.author} onChange={e => update('author', e.target.value)} placeholder="Author name" style={inputStyle} /></div>
+          <div>
+            <label style={labelStyle}>Title *</label>
+            <Autocomplete value={form.title} onChange={v => update('title', v)} suggestions={titleSuggestions} placeholder="Book title" style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Author</label>
+            <Autocomplete value={form.author} onChange={v => update('author', v)} suggestions={authorSuggestions} placeholder="Author name" style={inputStyle} />
+          </div>
           <div><label style={labelStyle}>Edition Name</label><input value={form.edition_name} onChange={e => update('edition_name', e.target.value)} placeholder="e.g. Fairyloot Exclusive" style={inputStyle} /></div>
           <div><label style={labelStyle}>Status</label>
             <select value={form.status} onChange={e => update('status', e.target.value)} style={inputStyle}>
@@ -143,8 +168,20 @@ function AddPendingModal({ onClose, onSave, userId }) {
           </div>
           <div><label style={labelStyle}>Ordered From</label><input value={form.source} onChange={e => update('source', e.target.value)} placeholder="e.g. Amazon, Bookshop.org, Fairyloot" style={inputStyle} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div><label style={labelStyle}>Order Date</label><input type="date" value={form.order_date} onChange={e => update('order_date', e.target.value)} style={inputStyle} /></div>
-            <div><label style={labelStyle}>Expected Arrival</label><input type="date" value={form.expected_arrival} onChange={e => update('expected_arrival', e.target.value)} style={inputStyle} /></div>
+            <div>
+              <label style={optionalLabelStyle}>
+                Order Date
+                <span style={{ color: T.muted, fontSize: '11px', fontWeight: 'normal' }}>(optional)</span>
+              </label>
+              <input type="date" value={form.order_date} onChange={e => update('order_date', e.target.value)} style={inputStyle} />
+            </div>
+            <div>
+              <label style={optionalLabelStyle}>
+                Expected Arrival
+                <span style={{ color: T.muted, fontSize: '11px', fontWeight: 'normal' }}>(optional)</span>
+              </label>
+              <input type="date" value={form.expected_arrival} onChange={e => update('expected_arrival', e.target.value)} style={inputStyle} />
+            </div>
           </div>
           <div><label style={labelStyle}>Notes</label><textarea value={form.notes} onChange={e => update('notes', e.target.value)} placeholder="e.g. Comes with exclusive art print!" rows={3} style={{ ...inputStyle, resize: 'vertical' }} /></div>
           <button onClick={handleSave} disabled={loading} style={{ width: '100%', padding: '14px', borderRadius: '10px', background: T.teal, color: T.white, border: 'none', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', boxShadow: '0 4px 15px rgba(13,148,136,0.4)' }}>
