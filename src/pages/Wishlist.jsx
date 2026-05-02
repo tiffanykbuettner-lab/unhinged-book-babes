@@ -17,8 +17,11 @@ export default function Wishlist() {
 
   async function fetchItems(userId) {
     const { data } = await supabase
-      .from('wishlist').select('*').eq('owner_id', userId)
-      .is('gifted_at', null).order('created_at', { ascending: false })
+      .from('wishlist')
+      .select('*')
+      .eq('owner_id', userId)
+      .is('gifted_at', null)
+      .order('created_at', { ascending: false })
     setItems(data || [])
     setLoading(false)
   }
@@ -66,13 +69,8 @@ export default function Wishlist() {
                       <p style={{ margin: 0, fontWeight: 'bold', color: T.white, fontSize: '15px' }}>{item.title}</p>
                       {item.author && <p style={{ margin: '2px 0', color: T.tealLight, fontSize: '13px' }}>{item.author}</p>}
                     </div>
-                    {item.claimed_by ? (
-                      <span style={{ background: T.goldDim, color: T.goldLight, fontSize: '11px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '10px', border: `1px solid ${T.goldBorder}`, whiteSpace: 'nowrap', marginLeft: '8px' }}>
-                        🎁 Claimed
-                      </span>
-                    ) : (
-                      <button onClick={() => deleteItem(item.id)} style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', fontSize: '16px', padding: '0', marginLeft: '8px' }}>✕</button>
-                    )}
+                    {/* Owner never sees claimed status */}
+                    <button onClick={() => deleteItem(item.id)} style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', fontSize: '16px', padding: '0', marginLeft: '8px' }}>✕</button>
                   </div>
                   {item.edition_preference && <p style={{ margin: '6px 0 0', color: T.goldLight, fontSize: '12px' }}>📌 {item.edition_preference}</p>}
                   {item.notes && <p style={{ margin: '4px 0 0', color: T.muted, fontSize: '12px', fontStyle: 'italic' }}>{item.notes}</p>}

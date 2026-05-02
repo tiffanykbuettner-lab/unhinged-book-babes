@@ -109,7 +109,23 @@ function FriendLibrary({ friend, onBack, currentUser }) {
     await supabase.from('wishlist').update({ claimed_by: null, claimed_at: null }).eq('id', item.id)
     fetchData()
   }
-
+  async function markPurchased(item) {
+    if (!confirm(`Mark "${item.title}" as purchased for ${friend.display_name}?`)) return
+    const now = new Date().toISOString()
+    // Add to gift history
+    await supabase.from('gift_history').insert({
+      gifted_by: currentUser.id,
+      gifted_to: friend.id,
+      book_title: item.title,
+      edition_name: item.edition_preference || '',
+      occasion: 'Wishlist Gift',
+      gifted_at: now
+    })
+    // Mark wishlist item as gifted
+    await supabase.from('wishlist').update({ gifted_at: now }).eq('id', item.id)
+    fetchData()
+    alert(`🎉 Marked as purchased! This will disappear from ${friend.display_name}'s wishlist.`)
+  }
   const filtered = search.trim()
     ? books.filter(b => b.title?.toLowerCase().includes(search.toLowerCase()) || b.author?.toLowerCase().includes(search.toLowerCase()))
     : books
@@ -184,41 +200,43 @@ function FriendLibrary({ friend, onBack, currentUser }) {
           )
         ) : (
           wishlist.length === 0 ? (
-            <div style={{ textAlign: 'center', marginTop: '60px' }}>
-              <p style={{ color: T.muted }}>Their wishlist is empty.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {wishlist.map(item => (
-                <div key={item.id} style={{ background: T.card, borderRadius: '14px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', display: 'flex', gap: '12px', alignItems: 'center', border: `1px solid ${T.tealBorder}` }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontWeight: 'bold', color: T.white, fontSize: '15px' }}>{item.title}</p>
-                    {item.author && <p style={{ margin: '2px 0', color: T.tealLight, fontSize: '13px' }}>{item.author}</p>}
-                    {item.edition_preference && <p style={{ margin: '4px 0 0', color: T.goldLight, fontSize: '12px' }}>📌 {item.edition_preference}</p>}
-                    {item.notes && <p style={{ margin: '4px 0 0', color: T.muted, fontSize: '12px', fontStyle: 'italic' }}>{item.notes}</p>}
-                  </div>
-                  {item.claimed_by ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ background: T.goldDim, color: T.goldLight, fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', borderRadius: '10px', border: `1px solid ${T.goldBorder}`, whiteSpace: 'nowrap' }}>
-                        🎁 Claimed
-                      </span>
-                      {item.claimed_by === currentUser?.id && (
-                        <button onClick={() => unclaimItem(item)} style={{ background: 'none', border: 'none', color: T.muted, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}>
-                          Unclaim
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <button onClick={() => claimItem(item)} style={{ background: T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(13,148,136,0.3)' }}>
-                      🎁 Claim
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )
+  <div style={{ textAlign: 'center', marginTop: '60px' }}>
+    <p style={{ color: T.muted }}>Their wishlist is empty.</p>
+  </div>
+) : (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    {wishlist.filter(item => !item.gifted_at).map(item => (
+      <div key={item.id} style={{ background: T.card, borderRadius: '14px', padding: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', display: 'flex', gap: '12px', alignItems: 'center', border: `1px solid ${T.tealBorder}` }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ margin: 0, fontWeight: 'bold', color: T.white, fontSize: '15px' }}>{item.title}</p>
+          {item.author && <p style={{ margin: '2px 0', color: T.tealLight, fontSize: '13px' }}>{item.author}</p>}
+          {item.edition_preference && <p style={{ margin: '4px 0 0', color: T.goldLight, fontSize: '12px' }}>📌 {item.edition_preference}</p>}
+          {item.notes && <p style={{ margin: '4px 0 0', color: T.muted, fontSize: '12px', fontStyle: 'italic' }}>{item.notes}</p>}
+          {/* If current user claimed it, show Mark as Purchased */}
+          {item.claimed_by === currentUser?.id && (
+            <button onClick={() => markPurchased(item)} style={{ marginTop: '8px', background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+              🎁 Mark as Purchased
+            </button>
+          )}
+        </div>
+        {item.claimed_by ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <span style={{ background: T.goldDim, color: T.goldLight, fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', borderRadius: '10px', border: `1px solid ${T.goldBorder}`, whiteSpace: 'nowrap' }}>
+              🎁 Claimed
+            </span>
+            {item.claimed_by === currentUser?.id && (
+              <button onClick={() => unclaimItem(item)} style={{ background: 'none', border: 'none', color: T.muted, fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}>
+                Unclaim
+              </button>
+            )}
+          </div>
+        ) : (
+          <button onClick={() => claimItem(item)} style={{ background: T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Georgia, serif', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(13,148,136,0.3)' }}>
+            🎁 Claim
+          </button>
         )}
       </div>
-    </div>
-  )
+    ))}
+  </div>
+)
 }
