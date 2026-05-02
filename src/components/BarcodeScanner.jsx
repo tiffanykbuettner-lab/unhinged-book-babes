@@ -20,7 +20,11 @@ export default function BarcodeScanner({ onDetected, onClose, bulkMode = false, 
       inputStream: {
         type: 'LiveStream',
         target: scannerRef.current,
-        constraints: { facingMode: 'environment', width: { min: 300 }, height: { min: 200 } },
+        constraints: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
       },
       decoder: { readers: ['ean_reader', 'ean_8_reader', 'upc_reader'] },
       locate: true,
