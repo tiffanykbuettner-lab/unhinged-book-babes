@@ -112,7 +112,7 @@ export default function Library() {
               background: editionFilter === 'all' ? T.goldDim : 'transparent',
               color: editionFilter === 'all' ? T.goldLight : T.muted,
               transition: 'all 0.2s'
-            }}>✨ All Editions</button>
+            }}> All Editions</button>
             {[...new Set(books.filter(b => b.edition_name).map(b => {
               const name = b.edition_name.toLowerCase()
               if (name.includes('fairyloot')) return 'Fairyloot'

@@ -1,30 +1,30 @@
 export const T = {
   // Backgrounds
-  bg: '#050d14',
-  surface: '#0a1a2e',
-  card: '#0d2137',
-  cardHover: '#112844',
-  header: 'linear-gradient(180deg, #0a2a3a 0%, #050d14 100%)',
+  bg: '#1b1018',
+  surface: '#281722',
+  card: '#35202f',
+  cardHover: '#482a3e',
+  header: 'linear-gradient(180deg, #3a1d30 0%, #1b1018 100%)',
 
-  // Teal scale
-  teal: '#0d9488',
-  tealLight: '#14b8a6',
-  tealDim: 'rgba(13,148,136,0.2)',
-  tealBorder: 'rgba(13,148,136,0.3)',
+  // Teal keys retained for compatibility with existing pages.
+  teal: '#7b3d5a',
+  tealLight: '#a45b78',
+  tealDim: 'rgba(164,91,120,0.18)',
+  tealBorder: 'rgba(214,183,121,0.22)',
 
-  // Gold accents (the chaos ✨)
-  gold: '#f59e0b',
-  goldLight: '#fbbf24',
-  goldDim: 'rgba(245,158,11,0.15)',
-  goldBorder: 'rgba(245,158,11,0.3)',
-  goldGlow: '0 0 20px rgba(245,158,11,0.3)',
+  // Antique gold
+  gold: '#d6b779',
+  goldLight: '#f0d7a1',
+  goldDim: 'rgba(214,183,121,0.14)',
+  goldBorder: 'rgba(214,183,121,0.32)',
+  goldGlow: '0 0 20px rgba(214,183,121,0.18)',
 
   // Text
-  white: '#f0f9ff',
-  muted: '#64748b',
-  subtle: '#94a3b8',
+  white: '#fff6eb',
+  muted: '#b8a4b0',
+  subtle: '#d1bdc9',
 
   // Status colors
-  success: '#10b981',
-  danger: '#ef4444',
+  success: '#75b99a',
+  danger: '#e27c86',
 }

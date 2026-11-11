@@ -95,16 +95,16 @@ export default function Profile() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: T.bg }}>
-      <p style={{ color: T.tealLight, fontFamily: 'Georgia, serif' }}>Loading...</p>
+      <p style={{ color: T.goldLight, fontFamily: 'Georgia, serif' }}>Loading...</p>
     </div>
   )
 
   return (
-    <div style={{ fontFamily: 'Georgia, serif', background: T.bg, minHeight: '100vh' }}>
-      <div style={{ background: T.header, padding: '32px 20px 48px', textAlign: 'center' }}>
+    <div style={{ fontFamily: 'Georgia, serif', background: T.bg, minHeight: '100vh', paddingBottom: '24px' }}>
+      <div style={{ background: T.header, padding: '28px 20px 42px', textAlign: 'center' }}>
         <div style={{ position: 'relative', display: 'inline-block', marginBottom: '16px' }}>
   	  <Avatar profile={profile} size={80} />
-  	  <button onClick={() => setShowAvatarPicker(true)} style={{ position: 'absolute', bottom: 0, right: 0, background: T.teal, border: 'none', borderRadius: '50%', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+  	  <button onClick={() => setShowAvatarPicker(true)} style={{ position: 'absolute', bottom: 0, right: 0, background: 'linear-gradient(135deg, #8a4968, #63304c)', border: 'none', borderRadius: '50%', width: '26px', height: '26px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
    	   ✏️
   	  </button>
 	{showAvatarPicker && (
@@ -124,9 +124,9 @@ export default function Profile() {
               onChange={e => setNewName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSaveName()}
               autoFocus
-              style={{ background: 'rgba(255,255,255,0.1)', border: `1px solid ${T.tealBorder}`, borderRadius: '8px', padding: '8px 12px', color: T.white, fontSize: '18px', fontFamily: 'Georgia, serif', textAlign: 'center', outline: 'none', width: '200px' }}
+              style={{ background: 'rgba(255,255,255,0.1)', border: `1px solid ${T.goldBorder}`, borderRadius: '8px', padding: '8px 12px', color: T.white, fontSize: '18px', fontFamily: 'Georgia, serif', textAlign: 'center', outline: 'none', width: '200px' }}
             />
-            <button onClick={handleSaveName} disabled={savingName} style={{ background: T.teal, color: T.white, border: 'none', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '13px', fontWeight: 'bold' }}>
+            <button onClick={handleSaveName} disabled={savingName} style={{ background: 'linear-gradient(135deg, #8a4968, #63304c)', color: T.white, border: 'none', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '13px', fontWeight: 'bold' }}>
               {savingName ? '...' : 'Save'}
             </button>
             <button onClick={() => { setEditingName(false); setNewName(profile?.display_name || '') }} style={{ background: 'rgba(255,255,255,0.1)', color: T.muted, border: 'none', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer', fontSize: '13px' }}>
@@ -142,7 +142,7 @@ export default function Profile() {
           </div>
         )}
 
-        <p style={{ color: T.tealLight, margin: '0 0 8px', fontSize: '14px' }}>{profile?.email}</p>
+        <p style={{ color: T.goldLight, margin: '0 0 8px', fontSize: '14px' }}>{profile?.email}</p>
         {profile?.role === 'admin' && (
           <span style={{ background: T.goldDim, color: T.goldLight, fontSize: '12px', padding: '4px 12px', borderRadius: '12px', border: `1px solid ${T.goldBorder}` }}>
             ✨ Admin
@@ -150,19 +150,19 @@ export default function Profile() {
         )}
       </div>
 
-      <div style={{ padding: '0 16px', marginTop: '-24px' }}>
-        <div style={{ background: T.card, borderRadius: '16px', padding: '20px', marginBottom: '12px', border: `1px solid ${T.tealBorder}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', textAlign: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '960px', boxSizing: 'border-box', padding: '0 20px', margin: '-24px auto 0' }}>
+        <div style={{ background: T.card, borderRadius: '16px', padding: '14px 20px', marginBottom: '10px', border: `1px solid ${T.goldBorder}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', textAlign: 'center' }}>
           <p style={{ margin: '0 0 4px', fontSize: '42px', fontWeight: 'bold', color: T.goldLight }}>{stats.total}</p>
-          <p style={{ margin: 0, fontSize: '14px', color: T.tealLight, fontWeight: 'bold' }}>Total Books in Library</p>
+          <p style={{ margin: 0, fontSize: '14px', color: T.goldLight, fontWeight: 'bold' }}>Total Books in Library</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '10px' }}>
           {[
             { count: stats.physical, label: 'Physical', emoji: '📖' },
             { count: stats.ebook, label: 'Ebooks', emoji: '📱' },
             { count: stats.audiobook, label: 'Audio', emoji: '🎧' },
           ].map(stat => (
-            <div key={stat.label} style={{ background: T.card, borderRadius: '14px', padding: '16px 12px', textAlign: 'center', border: `1px solid ${T.tealBorder}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+            <div key={stat.label} style={{ background: T.card, borderRadius: '14px', padding: '10px 12px', textAlign: 'center', border: `1px solid ${T.goldBorder}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
               <p style={{ margin: '0 0 4px', fontSize: '22px' }}>{stat.emoji}</p>
               <p style={{ margin: 0, fontSize: '22px', fontWeight: 'bold', color: T.goldLight }}>{stat.count}</p>
               <p style={{ margin: '4px 0 0', fontSize: '11px', color: T.muted }}>{stat.label}</p>
@@ -170,12 +170,12 @@ export default function Profile() {
           ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
           {[
             { count: stats.wishlist, label: 'Wishlist', emoji: '💫' },
             { count: stats.pending, label: 'Pending', emoji: '📦' },
           ].map(stat => (
-            <div key={stat.label} style={{ background: T.card, borderRadius: '14px', padding: '16px 12px', textAlign: 'center', border: `1px solid ${T.tealBorder}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+            <div key={stat.label} style={{ background: T.card, borderRadius: '14px', padding: '10px 12px', textAlign: 'center', border: `1px solid ${T.goldBorder}`, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
               <p style={{ margin: '0 0 4px', fontSize: '22px' }}>{stat.emoji}</p>
               <p style={{ margin: 0, fontSize: '22px', fontWeight: 'bold', color: T.goldLight }}>{stat.count}</p>
               <p style={{ margin: '4px 0 0', fontSize: '11px', color: T.muted }}>{stat.label}</p>
@@ -183,27 +183,29 @@ export default function Profile() {
           ))}
         </div>
 
-        <div style={{ background: T.card, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${T.tealBorder}`, marginBottom: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
-          <div style={{ padding: '16px 20px', borderBottom: `1px solid ${T.tealBorder}`, display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ background: T.card, borderRadius: '16px', overflow: 'hidden', border: `1px solid ${T.goldBorder}`, marginBottom: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+          <div style={{ padding: '11px 16px', borderBottom: `1px solid ${T.goldBorder}`, display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: T.muted, fontSize: '13px' }}>Member since</span>
             <span style={{ color: T.white, fontSize: '13px', fontWeight: 'bold' }}>
               {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—'}
             </span>
           </div>
-          <div style={{ padding: '16px 20px', borderBottom: `1px solid ${T.tealBorder}`, display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ padding: '11px 16px', borderBottom: `1px solid ${T.goldBorder}`, display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: T.muted, fontSize: '13px' }}>Role</span>
-            <span style={{ color: T.tealLight, fontSize: '13px', fontWeight: 'bold', textTransform: 'capitalize' }}>{profile?.role || 'Member'}</span>
+            <span style={{ color: T.goldLight, fontSize: '13px', fontWeight: 'bold', textTransform: 'capitalize' }}>{profile?.role || 'Member'}</span>
           </div>
-          <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ padding: '11px 16px', display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: T.muted, fontSize: '13px' }}>Squad</span>
             <span style={{ color: T.goldLight, fontSize: '13px', fontWeight: 'bold' }}>Unhinged Book Babes 💀</span>
           </div>
         </div>
 
+        <p style={{ color: T.goldLight, fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', margin: '18px 0 10px', opacity: 0.8 }}>Account tools</p>
+
         <button onClick={fixMissingCovers} disabled={fixingCovers} style={{
-          width: '100%', padding: '14px', borderRadius: '12px',
-          background: fixingCovers ? 'rgba(13,148,136,0.1)' : T.tealDim,
-          color: T.tealLight, border: `1px solid ${T.tealBorder}`,
+          width: '100%', padding: '11px 14px', borderRadius: '10px',
+          background: fixingCovers ? 'rgba(138,73,104,0.12)' : 'rgba(138,73,104,0.18)',
+          color: T.goldLight, border: `1px solid ${T.goldBorder}`,
           fontSize: '15px', fontWeight: 'bold', cursor: fixingCovers ? 'not-allowed' : 'pointer',
           fontFamily: 'Georgia, serif', marginBottom: '12px'
         }}>
@@ -211,9 +213,9 @@ export default function Profile() {
         </button>
 
         <button onClick={() => window.location.href = '/import'} style={{
-          width: '100%', padding: '14px', borderRadius: '12px',
-          background: T.tealDim, color: T.tealLight,
-          border: `1px solid ${T.tealBorder}`,
+          width: '100%', padding: '11px 14px', borderRadius: '10px',
+          background: 'rgba(138,73,104,0.18)', color: T.goldLight,
+          border: `1px solid ${T.goldBorder}`,
           fontSize: '15px', fontWeight: 'bold', cursor: 'pointer',
           fontFamily: 'Georgia, serif', marginBottom: '12px'
         }}>
@@ -221,7 +223,7 @@ export default function Profile() {
         </button>
 
         <button onClick={handleSignOut} style={{
-          width: '100%', padding: '14px', borderRadius: '12px',
+          width: '100%', padding: '11px 14px', borderRadius: '10px',
           background: 'rgba(239,68,68,0.08)', color: '#f87171',
           border: '1px solid rgba(239,68,68,0.25)',
           fontSize: '15px', fontWeight: 'bold', cursor: 'pointer',
