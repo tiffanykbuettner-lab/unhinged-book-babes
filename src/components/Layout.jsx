@@ -1,41 +1,69 @@
-import { Outlet, NavLink } from 'react-router-dom'
+﻿import { Outlet, NavLink } from 'react-router-dom'
+import {
+  BookOpen,
+  UsersRound,
+  Heart,
+  PackageCheck,
+  Sparkles,
+  BookMarked,
+  WandSparkles,
+} from 'lucide-react'
 import { T } from '../lib/theme'
 
 export default function Layout() {
   const navItems = [
-    { to: '/', label: 'Library', emoji: '📖' },
-    { to: '/friends', label: 'Friends', emoji: '👯‍♀️' },
-    { to: '/wishlist', label: 'Wishlist', emoji: '💫' },
-    { to: '/pending', label: 'Pending', emoji: '📦' },
-    { to: '/profile', label: 'Profile', emoji: '💀' },
+    { to: '/', label: 'My Library', Icon: BookOpen },
+    { to: '/friends', label: 'Book Besties', Icon: UsersRound },
+    { to: '/wishlist', label: 'Wishlist', Icon: Heart },
+    { to: '/pending', label: 'On the Way', Icon: PackageCheck },
+    { to: '/profile', label: 'My Profile', Icon: Sparkles },
+    { to: '/tbr', label: 'My TBR', Icon: BookMarked },
+    { to: '/sommelier', label: 'Book Sommelier', Icon: WandSparkles },
   ]
 
   return (
-    <div style={{ paddingBottom: '75px', background: T.bg, minHeight: '100vh' }}>
-      <Outlet />
-      <nav style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: T.surface,
-        borderTop: `1px solid ${T.tealBorder}`,
-        display: 'flex', justifyContent: 'space-around',
-        padding: '8px 0 10px', zIndex: 50,
-        boxShadow: '0 -4px 24px rgba(0,0,0,0.4)'
-      }}>
-        {navItems.map(item => (
-          <NavLink key={item.to} to={item.to} end={item.to === '/'}
-            style={({ isActive }) => ({
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              textDecoration: 'none', padding: '4px 12px', borderRadius: '12px',
-              color: isActive ? T.goldLight : T.muted,
-              fontFamily: 'Georgia, serif',
-              borderBottom: isActive ? `2px solid ${T.gold}` : '2px solid transparent',
-              transition: 'all 0.2s'
-            })}>
-            <span style={{ fontSize: '20px' }}>{item.emoji}</span>
-            <span style={{ fontSize: '11px', fontWeight: '600', marginTop: '2px' }}>{item.label}</span>
-          </NavLink>
-        ))}
-      </nav>
+    <div className="app-shell" style={{ background: T.bg, color: T.white }}>
+      <aside className="app-sidebar">
+        <a className="app-brand" href="/" aria-label="The Book Cellar home">
+          <span className="app-brand-mark" aria-hidden="true">B</span>
+          <span>
+            <span className="app-brand-name">The Book Cellar</span>
+            <span className="app-brand-tagline">A private literary hideaway</span>
+          </span>
+        </a>
+
+        <div className="app-nav-label">Your little corner</div>
+        <nav className="app-nav" aria-label="Main navigation">
+          {navItems.map(({ to, label, Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/'}
+              className={({ isActive }) =>
+                `app-nav-link${isActive ? ' active' : ''}`
+              }
+            >
+              <span className="app-nav-icon" aria-hidden="true">
+                <Icon size={16} strokeWidth={1.8} />
+              </span>
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="app-sidebar-footer">
+          "Just one more chapter..."
+          <span>And then one more book</span>
+        </div>
+      </aside>
+
+      <main className="app-main">
+        <div className="app-mobile-brand">
+          <span className="app-brand-mark" aria-hidden="true">B</span>
+          <span>The Book Cellar</span>
+        </div>
+        <Outlet />
+      </main>
     </div>
   )
 }

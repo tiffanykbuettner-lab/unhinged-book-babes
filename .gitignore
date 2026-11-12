@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files (Supabase URL / keys) — never commit
+.env
+.env.*
+
+# Local backup copies made while editing (kept on disk, not in Git)
+*.bak
+
+# Local checkpoint snapshots
+*-checkpoint-*/

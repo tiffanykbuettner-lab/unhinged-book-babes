@@ -182,3 +182,28 @@
     border-right-color: var(--border);
   }
 }
+
+
+/* Book Cellar: focused fields in the Pending modal */
+.pending-modal-overlay input:focus,
+.pending-modal-overlay select:focus,
+.pending-modal-overlay textarea:focus {
+  border-color: #d6b779 !important;
+  box-shadow: 0 0 0 2px rgba(214, 183, 121, 0.16);
+}
+
+.pending-modal-overlay button:focus-visible {
+  outline: 2px solid #d6b779;
+  outline-offset: 3px;
+}
+
+/* Keep pending purchase dates readable on narrow screens */
+@media (max-width: 600px) {
+  .pending-date-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .pending-date-grid > div {
+    min-width: 0;
+  }
+}

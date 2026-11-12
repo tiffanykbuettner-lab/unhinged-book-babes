@@ -41,7 +41,7 @@ export default function CoverUpload({ onUploaded, currentUrl }) {
         <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
           onChange={e => handleFile(e.target.files[0])} />
         <button onClick={() => fileRef.current.click()} disabled={uploading}
-          style={{ flex: 1, padding: '10px', borderRadius: '8px', background: T.tealDim, color: T.tealLight, border: `1px solid ${T.tealBorder}`, cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '13px', fontWeight: 'bold' }}>
+          style={{ flex: 1, padding: '10px', borderRadius: '8px', background: 'rgba(138,73,104,0.18)', color: '#f4e9df', border: '1px solid rgba(214,183,121,0.35)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '13px', fontWeight: 'bold' }}>
           {uploading ? 'Uploading...' : '🖼️ Upload Photo'}
         </button>
 
@@ -49,7 +49,7 @@ export default function CoverUpload({ onUploaded, currentUrl }) {
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
           onChange={e => handleFile(e.target.files[0])} />
         <button onClick={() => cameraRef.current.click()} disabled={uploading}
-          style={{ flex: 1, padding: '10px', borderRadius: '8px', background: T.goldDim, color: T.goldLight, border: `1px solid ${T.goldBorder}`, cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '13px', fontWeight: 'bold' }}>
+          style={{ flex: 1, padding: '10px', borderRadius: '8px', background: 'rgba(138,73,104,0.18)', color: '#f4e9df', border: '1px solid rgba(214,183,121,0.35)', cursor: 'pointer', fontFamily: 'Georgia, serif', fontSize: '13px', fontWeight: 'bold' }}>
           {uploading ? '...' : '📷 Take Photo'}
         </button>
       </div>

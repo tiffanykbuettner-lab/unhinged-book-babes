@@ -44,7 +44,7 @@ export default function Autocomplete({ value, onChange, suggestions, placeholder
       {show && filtered.length > 0 && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
-          background: '#0d2137', border: `1px solid ${T.tealBorder}`,
+          background: '#281722', border: `1px solid ${T.goldBorder}`,
           borderRadius: '8px', marginTop: '4px',
           boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden'
         }}>
@@ -53,10 +53,10 @@ export default function Autocomplete({ value, onChange, suggestions, placeholder
               style={{
                 padding: '10px 14px', cursor: 'pointer', color: T.white,
                 fontSize: '14px', fontFamily: 'Georgia, serif',
-                borderBottom: `1px solid ${T.tealBorder}`,
+                borderBottom: `1px solid ${T.goldBorder}`,
                 transition: 'background 0.1s'
               }}
-              onMouseEnter={e => e.currentTarget.style.background = T.tealDim}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(138,73,104,0.22)'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               {s}

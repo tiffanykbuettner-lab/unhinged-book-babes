@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+﻿import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
@@ -10,6 +10,10 @@ import Pending from './pages/Pending'
 import Profile from './pages/Profile'
 import Layout from './components/Layout'
 import Import from './pages/Import'
+import TBR from './pages/TBR'
+import Sommelier from './pages/Sommelier'
+import GoodreadsImport from './pages/GoodreadsImport'
+import GoodreadsReview from './pages/GoodreadsReview'
 
 function ImportWrapper() {
   const navigate = useNavigate()
@@ -37,12 +41,16 @@ function App() {
         <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
         <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/" />} />
         <Route path="/import" element={session ? <ImportWrapper /> : <Navigate to="/login" />} />
+        <Route path="/goodreads-import" element={session ? <GoodreadsImport /> : <Navigate to="/login" />} />
+        <Route path="/goodreads-review" element={session ? <GoodreadsReview /> : <Navigate to="/login" />} />
         <Route element={session ? <Layout /> : <Navigate to="/login" />}>
           <Route path="/" element={<Library />} />
           <Route path="/friends" element={<Friends />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/pending" element={<Pending />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/tbr" element={<TBR />} />
+          <Route path="/sommelier" element={<Sommelier />} />
         </Route>
       </Routes>
     </BrowserRouter>
@@ -50,3 +58,6 @@ function App() {
 }
 
 export default App
+
+
+
