@@ -1,4 +1,4 @@
-﻿import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet, NavLink } from 'react-router-dom'
 import {
   BookOpen,
   UsersRound,
@@ -7,6 +7,7 @@ import {
   Sparkles,
   BookMarked,
   WandSparkles,
+  Download,
 } from 'lucide-react'
 import { T } from '../lib/theme'
 
@@ -19,6 +20,7 @@ export default function Layout() {
     { to: '/profile', label: 'My Profile', Icon: Sparkles },
     { to: '/tbr', label: 'My TBR', Icon: BookMarked },
     { to: '/sommelier', label: 'Book Sommelier', Icon: WandSparkles },
+    { to: '/goodreads-import', label: 'Goodreads Import', Icon: Download },
   ]
 
   return (

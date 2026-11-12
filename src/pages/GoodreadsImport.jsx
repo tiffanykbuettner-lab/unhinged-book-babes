@@ -98,6 +98,7 @@ export default function GoodreadsImport() {
   const [progress, setProgress] = useState(0)
   const [catalogBooks, setCatalogBooks] = useState([])
   const [matchReady, setMatchReady] = useState(false)
+  const [staged, setStaged] = useState(false)
 
   function handleFile(event) {
     const file = event.target.files?.[0]
@@ -106,6 +107,7 @@ export default function GoodreadsImport() {
     setRows([])
     setCatalogBooks([])
     setMatchReady(false)
+    setStaged(false)
     if (!file) return
 
     if (!file.name.toLowerCase().endsWith('.csv')) {
@@ -218,7 +220,8 @@ export default function GoodreadsImport() {
 
       if (updateError) throw updateError
 
-      setMessage(`Staged ${rows.length.toLocaleString()} Goodreads rows for review. Your Library has not been changed.`)
+      setMessage(`Staged ${rows.length.toLocaleString()} Goodreads rows for review. Your Library has not been changed. Next, approve the books you want in Goodreads Review.`)
+      setStaged(true)
       setRows([])
     } catch (err) {
       setError(`Could not finish staging the import: ${err.message || 'Unknown error'}. Your Library books were not changed. Check the import list before retrying to avoid creating a duplicate batch.`)
@@ -243,6 +246,12 @@ export default function GoodreadsImport() {
         <p style={{ color: T.muted, lineHeight: 1.7, maxWidth: '720px' }}>
           Upload your Goodreads library export to preview and stage its rows for review. Ratings, dates, shelves, notes, and every other CSV column are preserved in the original row data.
         </p>
+        <button
+          onClick={() => navigate('/goodreads-review')}
+          style={{ background: 'transparent', border: 'none', padding: 0, color: T.tealLight, textDecoration: 'underline', cursor: 'pointer', fontSize: '14px' }}
+        >
+          Already uploaded an export? Continue reviewing your latest import →
+        </button>
       </header>
 
       <div style={panel}>
@@ -266,6 +275,13 @@ export default function GoodreadsImport() {
       {message && (
         <div role="status" style={{ ...panel, borderColor: T.teal, color: T.tealLight, lineHeight: 1.7 }}>
           {message}
+          {staged && (
+            <div style={{ marginTop: '12px' }}>
+              <button onClick={() => navigate('/goodreads-review')} style={buttonStyle}>
+                Go to Goodreads Review →
+              </button>
+            </div>
+          )}
         </div>
       )}
 

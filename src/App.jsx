@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 import Login from './pages/Login'
@@ -41,8 +41,6 @@ function App() {
         <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
         <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/" />} />
         <Route path="/import" element={session ? <ImportWrapper /> : <Navigate to="/login" />} />
-        <Route path="/goodreads-import" element={session ? <GoodreadsImport /> : <Navigate to="/login" />} />
-        <Route path="/goodreads-review" element={session ? <GoodreadsReview /> : <Navigate to="/login" />} />
         <Route element={session ? <Layout /> : <Navigate to="/login" />}>
           <Route path="/" element={<Library />} />
           <Route path="/friends" element={<Friends />} />
@@ -51,6 +49,8 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/tbr" element={<TBR />} />
           <Route path="/sommelier" element={<Sommelier />} />
+          <Route path="/goodreads-import" element={<GoodreadsImport />} />
+          <Route path="/goodreads-review" element={<GoodreadsReview />} />
         </Route>
       </Routes>
     </BrowserRouter>
@@ -58,6 +58,3 @@ function App() {
 }
 
 export default App
-
-
-
