@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { T } from '../lib/theme'
 import { fetchAll } from '../lib/fetchAll'
@@ -289,6 +290,12 @@ export default function TBR() {
         <button type="button" onClick={loadData} disabled={loading} style={buttonStyle}>
           {loading ? 'Loading…' : 'Refresh'}
         </button>
+        <Link
+          to="/goodreads-import"
+          style={{ ...buttonStyle, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+        >
+          Import from Goodreads
+        </Link>
       </div>
 
       {ownership === 'unowned' && (
