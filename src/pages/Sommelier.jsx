@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { T } from '../lib/theme'
 import { fetchAll } from '../lib/fetchAll'
+import BookTagging from '../components/BookTagging'
 
 const panel = {
   background: T.surface,
@@ -410,6 +411,8 @@ export default function Sommelier() {
           {loading ? 'Loading your catalog…' : `${catalog.length} reading-catalog entries available`}
         </p>
       </header>
+
+      <BookTagging />
 
       {error && <div role="alert" style={{ ...panel, borderColor: T.redBorder || T.goldBorder, marginBottom: '16px' }}>{error}</div>}
 

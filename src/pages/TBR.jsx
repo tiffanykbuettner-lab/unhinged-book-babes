@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { T } from '../lib/theme'
 import { fetchAll } from '../lib/fetchAll'
+import { loadBookTags } from '../lib/bookTags'
+import { SPICE_LABELS } from '../lib/tagVocabulary'
 import TBRDiscoveries from '../components/TBRDiscoveries'
 
 const statuses = [
@@ -41,6 +43,7 @@ export default function TBR() {
   const [ownership, setOwnership] = useState('all')
   const [search, setSearch] = useState('')
   const [works, setWorks] = useState([])
+  const [tagsByWork, setTagsByWork] = useState(new Map())
   const [entries, setEntries] = useState([])
   const [ownedWorkIds, setOwnedWorkIds] = useState([])
   const [editions, setEditions] = useState([])
@@ -97,6 +100,10 @@ export default function TBR() {
       setEntries(entriesResult.data ?? [])
       setOwnedWorkIds([...new Set((ownedResult.data ?? []).map(copy => copy.work_id).filter(Boolean))])
       setEditions(editionsResult.data ?? [])
+
+      // Tags are a bonus: if they can't load, the TBR still works.
+      const { tagsByWork: loadedTags } = await loadBookTags()
+      setTagsByWork(loadedTags)
     } catch (err) {
       setError(err?.message || 'Something went wrong loading your TBR.')
     } finally {
@@ -133,10 +140,12 @@ export default function TBR() {
       const entry = entriesByWork.get(work.id)
       const isOwned = ownedIds.has(work.id)
 
+      const tags = tagsByWork.get(work.id)
       if (term && ![
         work.title,
         work.primary_author,
         work.series_name,
+        ...(tags ? [...tags.genre, ...tags.trope, ...tags.mood, ...tags.season] : []),
       ].some(value => value?.toLowerCase().includes(term))) return false
 
       if (ownership === 'owned' && !isOwned) return false
@@ -146,7 +155,7 @@ export default function TBR() {
 
       return true
     })
-  }, [works, entriesByWork, ownedIds, search, ownership, status])
+  }, [works, entriesByWork, ownedIds, search, ownership, status, tagsByWork])
 
   async function addToTbr(work) {
     setBusyWorkId(work.id)
@@ -264,7 +273,7 @@ export default function TBR() {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
         <input
           aria-label="Search books"
-          placeholder="Search titles, authors, or series..."
+          placeholder="Search titles, authors, series, or tags (e.g. hockey)..."
           value={search}
           onChange={event => setSearch(event.target.value)}
           style={{ ...inputStyle, flex: '1 1 240px', minWidth: 0 }}
@@ -360,6 +369,8 @@ export default function TBR() {
                       </p>
                     )}
 
+                    <BookTagSummary tags={tagsByWork.get(work.id)} />
+
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '2px' }}>
                       <span style={{ border: `1px solid ${T.goldBorder}`, borderRadius: '999px', padding: '4px 8px', fontSize: '11px', color: T.muted }}>
                         {ownedIds.has(work.id) ? 'On my shelves' : 'Not owned yet'}
@@ -415,5 +426,39 @@ export default function TBR() {
             )}
 
     </section>
+  )
+}
+
+// Genre/trope chips, spice, mood/season and trigger warnings for one book.
+function BookTagSummary({ tags }) {
+  if (!tags) return null
+  const chips = [...tags.genre, ...tags.trope]
+  const shown = chips.slice(0, 5)
+  const moodSeason = [...tags.mood, ...tags.season]
+  const chipStyle = { background: 'rgba(190, 153, 88, 0.12)', color: T.goldLight, borderRadius: '6px', padding: '3px 7px', fontSize: '11px' }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {tags.spice_level != null && (
+        <div style={{ fontSize: '12px', color: T.muted }} title={SPICE_LABELS[tags.spice_level]}>
+          {tags.spice_level === 0 ? 'Closed door' : '🌶️'.repeat(tags.spice_level)}
+          <span style={{ marginLeft: '6px' }}>{SPICE_LABELS[tags.spice_level]}</span>
+        </div>
+      )}
+      {shown.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+          {shown.map(tag => <span key={tag} style={chipStyle}>{tag}</span>)}
+          {chips.length > shown.length && <span style={{ ...chipStyle, background: 'transparent', color: T.muted }}>+{chips.length - shown.length} more</span>}
+        </div>
+      )}
+      {moodSeason.length > 0 && (
+        <div style={{ fontSize: '12px', color: T.muted }}>{moodSeason.join(' · ')}</div>
+      )}
+      {tags.content_warning.length > 0 && (
+        <div style={{ fontSize: '12px', color: '#f0c27a', lineHeight: 1.5 }}>
+          ⚠ Trigger warnings: {tags.content_warning.join(', ')}
+        </div>
+      )}
+    </div>
   )
 }
