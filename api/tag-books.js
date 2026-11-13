@@ -26,7 +26,12 @@ function sendError(res, status, message) {
 
 async function readQueue(admin, userId, limit) {
   const { data, error } = await admin.rpc('sommelier_tagging_queue', { p_user_id: userId, p_limit: limit })
-  if (error) throw new Error(`Could not read the tagging queue: ${error.message}`)
+  if (error) {
+    const hint = /api key|jwt|invalid|unauthorized|permission/i.test(error.message)
+      ? ' This usually means SUPABASE_SERVICE_ROLE_KEY in Vercel is not the secret/service_role key for this project.'
+      : ''
+    throw new Error(`Could not read the tagging queue: ${error.message}.${hint}`)
+  }
   const rows = data || []
   const first = rows[0] || {}
   return {
@@ -43,20 +48,33 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return sendError(res, 405, 'Use POST.')
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   const anthropicKey = process.env.ANTHROPIC_API_KEY
-  if (!supabaseUrl || !serviceKey || !anthropicKey) {
-    return sendError(res, 500, 'The server is missing a setting (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY or ANTHROPIC_API_KEY). Add it in Vercel and redeploy.')
+  const missing = [
+    !supabaseUrl && 'VITE_SUPABASE_URL',
+    !anonKey && 'VITE_SUPABASE_ANON_KEY',
+    !serviceKey && 'SUPABASE_SERVICE_ROLE_KEY',
+    !anthropicKey && 'ANTHROPIC_API_KEY',
+  ].filter(Boolean)
+  if (missing.length) {
+    return sendError(res, 500, `The server is missing these Vercel settings: ${missing.join(', ')}. Add them and redeploy.`)
   }
 
-  // 1. Who is asking? Only signed-in, allowed readers can spend AI credits.
+  // 1. Who is asking? Checked with the same public key the website uses,
+  //    so a problem here is about your sign-in, not the server's settings.
   const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '')
   if (!token) return sendError(res, 401, 'Please sign in again.')
 
-  const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
-  const { data: userData, error: userError } = await admin.auth.getUser(token)
+  const authClient = createClient(supabaseUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
+  const { data: userData, error: userError } = await authClient.auth.getUser(token)
   const user = userData?.user
-  if (userError || !user) return sendError(res, 401, 'Your sign-in has expired. Please sign in again.')
+  if (userError || !user) {
+    console.error('tag-books: sign-in check failed:', userError?.message)
+    return sendError(res, 401, `Couldn't confirm your sign-in (${userError?.message || 'no user'}). Try signing out and back in.`)
+  }
+
+  const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
 
   const allowed = String(process.env.SOMMELIER_ALLOWED_USER_IDS || '').split(',').map(id => id.trim()).filter(Boolean)
   if (!allowed.includes(user.id)) return sendError(res, 403, 'Book tagging is not turned on for this account.')
@@ -130,6 +148,7 @@ export default async function handler(req, res) {
       model: MODEL,
     })
   } catch (err) {
+    console.error('tag-books:', err.message)
     return sendError(res, 500, err.message || 'Something went wrong while tagging.')
   }
 }
